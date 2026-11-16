@@ -35,6 +35,7 @@ import { HOST_CODES, WiringError, errorResult, toErrorShape } from './errors.js'
 import { PANEL } from './panel.js'
 import { listDirectory } from './fs.js'
 import { pickFile } from './pick.js'
+import { revealPath } from './reveal.js'
 
 /** Fixed route prefix. The Client hard-codes the same value. */
 export const ROUTE_PREFIX = '/api/kumquat'
@@ -400,6 +401,16 @@ export function createRouter(options) {
           }
           return { status: 200, body: picked.canceled ? { canceled: true } : { path: picked.path } }
         }
+        case 'reveal': {
+          if (method !== 'POST') return methodNotAllowed('POST')
+          const target = validatePath(body.path)
+          if (!target.ok) return fail(400, HOST_CODES.INPUT, target.message, target.hint)
+          const revealed = await revealPath(target.value)
+          if (!revealed.supported) {
+            return fail(501, HOST_CODES.WIRING, '当前客户端不支持打开文件夹', '复制路径后粘贴到资源管理器。')
+          }
+          return { status: 200, body: { ok: true } }
+        }
         case 'probe': {
           if (method !== 'POST') return methodNotAllowed('POST')
           // `path` is the documented field; `input` is the Client's spelling.
@@ -530,5 +541,6 @@ export function createRouter(options) {
     }
   }
 }
+
 
 

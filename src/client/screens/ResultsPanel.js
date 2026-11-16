@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 屏幕 3 · 结果（挂在表单下面，不是第四个屏幕）。
  * 空态一句话；有结果就一行一个徽章，点开看细目。
  */
@@ -12,7 +12,7 @@ import { ResultRow } from '../components/ResultRow.js'
  *   onToggle: Function, onCopy: Function, onCancel: Function, onRepair: Function,
  * }} props
  */
-export function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair }) {
+export function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal }) {
   return h('section', { className: 'kq-results', 'aria-label': '结果' },
     h('div', { className: 'kq-sec__label' }, '结果'),
     model.queue && model.queue.text ? h('p', { className: 'kq-hint' }, model.queue.text) : null,
@@ -25,5 +25,8 @@ export function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair }) {
         onCopy,
         onCancel: () => onCancel(row.id),
         onRepair: () => onRepair(row),
+        onReveal,
       }))))
 }
+
+

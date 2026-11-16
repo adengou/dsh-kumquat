@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 结果行：一行一个徽章，点开才展开「期望 / 实际 / 差多少 / 下一步 / 命令」。
  * 不弹窗、不跳页，结果就挂在表单下面。
  */
@@ -22,7 +22,7 @@ function detailId(row) {
  *   onToggle: Function, onCopy: Function, onCancel: Function, onRepair: Function,
  * }} props
  */
-export function ResultRow({ row, onToggle, onCopy, onCancel, onRepair }) {
+export function ResultRow({ row, onToggle, onCopy, onCancel, onRepair, onReveal }) {
   const expanded = row.expanded === true
   const detail = row.detail
   return h('li', { className: 'kq-result' },
@@ -63,6 +63,12 @@ export function ResultRow({ row, onToggle, onCopy, onCancel, onRepair }) {
         'aria-label': `${row.title} 验收细目`,
       },
       h('dl', { className: 'kq-dl' },
+        detail.outputPath
+          ? h('dt', null, '输出')
+          : null,
+        detail.outputPath
+          ? h('dd', { className: 'kq-dl__path', title: detail.outputPath }, detail.outputPath)
+          : null,
         h('dt', null, '期望'),
         h('dd', null, detail.expected),
         h('dt', null, '实际'),
@@ -84,6 +90,8 @@ export function ResultRow({ row, onToggle, onCopy, onCancel, onRepair }) {
       h('div', { className: 'kq-result__actions' },
         row.active ? h(GhostButton, { label: '取消任务', onClick: onCancel, ariaLabel: `取消任务 ${row.title}` }) : null,
         row.canRepair ? h(GhostButton, { label: '按建议修复', onClick: onRepair, ariaLabel: `按验收建议修复 ${row.title}` }) : null,
+        row.output ? h(GhostButton, { label: '打开文件夹', onClick: () => onReveal(row.output), ariaLabel: `打开所在文件夹 ${row.output}` }) : null,
         row.output ? h(GhostButton, { label: '复制输出路径', onClick: () => onCopy(row.output), ariaLabel: `复制输出路径 ${row.output}` }) : null))
       : null)
 }
+

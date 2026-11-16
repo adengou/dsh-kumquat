@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Kumquat · 全部样式，一个字符串。
  *
  * 规则（design/tokens.css 落地）：
@@ -118,6 +118,7 @@ export const CSS_TEXT = `
   border-radius:var(--kq-r-md);padding:12px;margin-top:2px}
 
 /* ── 文件浏览对话框 ─────────────────────────────────── */
+.kq-dl__path{font-family:ui-monospace,Consolas,monospace;font-size:var(--kq-fs-1);word-break:break-all;color:var(--kq-muted)}
 .kq-fs{width:min(720px,100%);max-height:min(88vh,860px);display:flex;flex-direction:column;
   background:var(--kq-card);color:var(--kq-text);border:1px solid var(--kq-line);
   border-radius:var(--kq-r-lg);box-shadow:var(--kq-shadow);overflow:hidden;
@@ -307,3 +308,4 @@ export const CSS_TEXT = `
 /* Only movement: an opacity ramp made screenshots and slow GPUs look washed out. */
 @keyframes kq-rise{from{transform:translateY(6px)}to{transform:none}}
 `
+

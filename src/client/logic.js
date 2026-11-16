@@ -1084,6 +1084,7 @@ export function buildResultRow(item, expanded, copied) {
     badge,
     expanded: expanded === true,
     detail: {
+      outputPath: typeof item.output === 'string' ? item.output : '',
       expected: expected || '—',
       actual: actual || '—',
       delta: delta || '—',

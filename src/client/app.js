@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Kumquat · 面板根组件与副作用编排。
  *
  * 组件只画逻辑层给的视图模型；选文件、探测、提交、轮询、取消、修复、复制、
@@ -97,6 +97,18 @@ export function createPanel(React) {
     const goHome = () => dispatch({ type: ACT.SCREEN, screen: 'home' })
     const openScreen = (screen) => dispatch({ type: ACT.SCREEN, screen })
     const retry = () => setRefreshKey((value) => value + 1)
+
+    const reveal = async (path) => {
+      if (typeof api.reveal !== 'function') {
+        await copy(path)
+        dispatch({ type: ACT.NOTICE, notice: '已复制输出路径，粘贴到资源管理器地址栏即可打开。' })
+        return
+      }
+      const result = await api.reveal(path)
+      if (result.ok) return
+      await copy(path)
+      dispatch({ type: ACT.NOTICE, notice: '已复制输出路径，粘贴到资源管理器地址栏即可打开。' })
+    }
 
     const copy = async (text) => {
       const copied = await copyText(text)
@@ -269,7 +281,7 @@ export function createPanel(React) {
         })
         : null,
       state.screen !== 'home'
-        ? h(ResultsPanel, { model: results, onToggle: (id) => dispatch({ type: ACT.EXPAND, id }), onCopy: copy, onCancel: cancelJob, onRepair: repair })
+        ? h(ResultsPanel, { model: results, onToggle: (id) => dispatch({ type: ACT.EXPAND, id }), onCopy: copy, onCancel: cancelJob, onRepair: repair, onReveal: reveal })
         : null,
       state.notice ? h('p', { className: 'kq-hint', role: 'status' }, state.notice) : null),
     dialogSlot !== null
@@ -291,4 +303,6 @@ export function createPanel(React) {
 
   return KumquatPanel
 }
+
+
 

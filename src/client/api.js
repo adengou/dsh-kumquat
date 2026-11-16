@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Kumquat · 宿主接口（浏览器半身）。
  *
  * 真实路由由 S5 提供；这里只定义契约、容错与可注入的 fake：
@@ -21,6 +21,7 @@ export const DEFAULT_ENDPOINTS = Object.freeze({
   capabilities: Object.freeze({ method: 'GET', path: '/api/kumquat/capabilities' }),
   fs: Object.freeze({ method: 'GET', path: '/api/kumquat/fs' }),
   pick: Object.freeze({ method: 'POST', path: '/api/kumquat/pick' }),
+  reveal: Object.freeze({ method: 'POST', path: '/api/kumquat/reveal' }),
   probe: Object.freeze({ method: 'POST', path: '/api/kumquat/probe' }),
   run: Object.freeze({ method: 'POST', path: '/api/kumquat/run' }),
   job: Object.freeze({ method: 'GET', path: '/api/kumquat/jobs/{id}' }),
@@ -268,6 +269,10 @@ export function createApi(ctx = {}) {
     },
     async pick() {
       return call('pick', { body: {} })
+    },
+    async reveal(path) {
+      if (typeof path !== 'string' || path === '') return { ok: false, error: { code: 'E_INPUT', message: '没有输出路径', hint: '' }, source: 'none' }
+      return call('reveal', { body: { path } })
     },
     async fsList(dir) {
       return call('fs', { query: typeof dir === 'string' && dir !== '' ? { path: dir } : {} })
@@ -564,6 +569,9 @@ export function createFakeApi(options = {}) {
     async pick() {
       return fail('E_OFFLINE', '演示模式没有系统文件对话框', '改用「粘贴路径」。')
     },
+    async reveal() {
+      return fail('E_OFFLINE', '演示模式不能打开文件夹', '复制路径后手动打开。')
+    },
     async fsList(dir) {
       return fail('E_OFFLINE', '演示模式没有目录列表', '改用「粘贴路径」。')
     },
@@ -647,6 +655,9 @@ export function createFakeApi(options = {}) {
     },
   })
 }
+
+
+
 
 
 

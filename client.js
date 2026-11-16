@@ -1450,6 +1450,7 @@ function buildResultRow(item, expanded, copied) {
     badge,
     expanded: expanded === true,
     detail: {
+      outputPath: typeof item.output === 'string' ? item.output : '',
       expected: expected || '—',
       actual: actual || '—',
       delta: delta || '—',
@@ -1872,6 +1873,7 @@ const DEFAULT_ENDPOINTS = Object.freeze({
   capabilities: Object.freeze({ method: 'GET', path: '/api/kumquat/capabilities' }),
   fs: Object.freeze({ method: 'GET', path: '/api/kumquat/fs' }),
   pick: Object.freeze({ method: 'POST', path: '/api/kumquat/pick' }),
+  reveal: Object.freeze({ method: 'POST', path: '/api/kumquat/reveal' }),
   probe: Object.freeze({ method: 'POST', path: '/api/kumquat/probe' }),
   run: Object.freeze({ method: 'POST', path: '/api/kumquat/run' }),
   job: Object.freeze({ method: 'GET', path: '/api/kumquat/jobs/{id}' }),
@@ -2119,6 +2121,10 @@ function createApi(ctx = {}) {
     },
     async pick() {
       return call('pick', { body: {} })
+    },
+    async reveal(path) {
+      if (typeof path !== 'string' || path === '') return { ok: false, error: { code: 'E_INPUT', message: '没有输出路径', hint: '' }, source: 'none' }
+      return call('reveal', { body: { path } })
     },
     async fsList(dir) {
       return call('fs', { query: typeof dir === 'string' && dir !== '' ? { path: dir } : {} })
@@ -2415,6 +2421,9 @@ function createFakeApi(options = {}) {
     async pick() {
       return fail('E_OFFLINE', '演示模式没有系统文件对话框', '改用「粘贴路径」。')
     },
+    async reveal() {
+      return fail('E_OFFLINE', '演示模式不能打开文件夹', '复制路径后手动打开。')
+    },
     async fsList(dir) {
       return fail('E_OFFLINE', '演示模式没有目录列表', '改用「粘贴路径」。')
     },
@@ -2498,6 +2507,9 @@ function createFakeApi(options = {}) {
     },
   })
 }
+
+
+
 
 
 
@@ -2811,6 +2823,7 @@ const CSS_TEXT = `
   border-radius:var(--kq-r-md);padding:12px;margin-top:2px}
 
 /* ── 文件浏览对话框 ─────────────────────────────────── */
+.kq-dl__path{font-family:ui-monospace,Consolas,monospace;font-size:var(--kq-fs-1);word-break:break-all;color:var(--kq-muted)}
 .kq-fs{width:min(720px,100%);max-height:min(88vh,860px);display:flex;flex-direction:column;
   background:var(--kq-card);color:var(--kq-text);border:1px solid var(--kq-line);
   border-radius:var(--kq-r-lg);box-shadow:var(--kq-shadow);overflow:hidden;
@@ -3000,6 +3013,7 @@ const CSS_TEXT = `
 /* Only movement: an opacity ramp made screenshots and slow GPUs look washed out. */
 @keyframes kq-rise{from{transform:translateY(6px)}to{transform:none}}
 `
+
 
 
 /* ── components/Icon.js ── */
@@ -3677,7 +3691,7 @@ function detailId(row) {
  *   onToggle: Function, onCopy: Function, onCancel: Function, onRepair: Function,
  * }} props
  */
-function ResultRow({ row, onToggle, onCopy, onCancel, onRepair }) {
+function ResultRow({ row, onToggle, onCopy, onCancel, onRepair, onReveal }) {
   const expanded = row.expanded === true
   const detail = row.detail
   return h('li', { className: 'kq-result' },
@@ -3718,6 +3732,12 @@ function ResultRow({ row, onToggle, onCopy, onCancel, onRepair }) {
         'aria-label': `${row.title} 验收细目`,
       },
       h('dl', { className: 'kq-dl' },
+        detail.outputPath
+          ? h('dt', null, '输出')
+          : null,
+        detail.outputPath
+          ? h('dd', { className: 'kq-dl__path', title: detail.outputPath }, detail.outputPath)
+          : null,
         h('dt', null, '期望'),
         h('dd', null, detail.expected),
         h('dt', null, '实际'),
@@ -3739,9 +3759,11 @@ function ResultRow({ row, onToggle, onCopy, onCancel, onRepair }) {
       h('div', { className: 'kq-result__actions' },
         row.active ? h(GhostButton, { label: '取消任务', onClick: onCancel, ariaLabel: `取消任务 ${row.title}` }) : null,
         row.canRepair ? h(GhostButton, { label: '按建议修复', onClick: onRepair, ariaLabel: `按验收建议修复 ${row.title}` }) : null,
+        row.output ? h(GhostButton, { label: '打开文件夹', onClick: () => onReveal(row.output), ariaLabel: `打开所在文件夹 ${row.output}` }) : null,
         row.output ? h(GhostButton, { label: '复制输出路径', onClick: () => onCopy(row.output), ariaLabel: `复制输出路径 ${row.output}` }) : null))
       : null)
 }
+
 
 
 /* ── components/BalanceLine.js ── */
@@ -4037,7 +4059,7 @@ function GifScreen(props) {
  *   onToggle: Function, onCopy: Function, onCancel: Function, onRepair: Function,
  * }} props
  */
-function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair }) {
+function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal }) {
   return h('section', { className: 'kq-results', 'aria-label': '结果' },
     h('div', { className: 'kq-sec__label' }, '结果'),
     model.queue && model.queue.text ? h('p', { className: 'kq-hint' }, model.queue.text) : null,
@@ -4050,8 +4072,11 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair }) {
         onCopy,
         onCancel: () => onCancel(row.id),
         onRepair: () => onRepair(row),
+        onReveal,
       }))))
 }
+
+
 
 
 /* ── app.js ── */
@@ -4139,6 +4164,18 @@ function createPanel(React) {
     const goHome = () => dispatch({ type: ACT.SCREEN, screen: 'home' })
     const openScreen = (screen) => dispatch({ type: ACT.SCREEN, screen })
     const retry = () => setRefreshKey((value) => value + 1)
+
+    const reveal = async (path) => {
+      if (typeof api.reveal !== 'function') {
+        await copy(path)
+        dispatch({ type: ACT.NOTICE, notice: '已复制输出路径，粘贴到资源管理器地址栏即可打开。' })
+        return
+      }
+      const result = await api.reveal(path)
+      if (result.ok) return
+      await copy(path)
+      dispatch({ type: ACT.NOTICE, notice: '已复制输出路径，粘贴到资源管理器地址栏即可打开。' })
+    }
 
     const copy = async (text) => {
       const copied = await copyText(text)
@@ -4311,7 +4348,7 @@ function createPanel(React) {
         })
         : null,
       state.screen !== 'home'
-        ? h(ResultsPanel, { model: results, onToggle: (id) => dispatch({ type: ACT.EXPAND, id }), onCopy: copy, onCancel: cancelJob, onRepair: repair })
+        ? h(ResultsPanel, { model: results, onToggle: (id) => dispatch({ type: ACT.EXPAND, id }), onCopy: copy, onCancel: cancelJob, onRepair: repair, onReveal: reveal })
         : null,
       state.notice ? h('p', { className: 'kq-hint', role: 'status' }, state.notice) : null),
     dialogSlot !== null
@@ -4333,6 +4370,8 @@ function createPanel(React) {
 
   return KumquatPanel
 }
+
+
 
 
 
