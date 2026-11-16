@@ -314,6 +314,9 @@ export function createService(options = {}) {
 
       record.summary.output = verified.verdict.ok ? finalPath : undefined
       record.summary.endedAt = Date.now()
+      // The list endpoint returns summaries; without this the panel shows
+      // "没有验收结果" even though the verdict exists on the detail.
+      record.summary.verdict = verified.verdict
       record.detail.verdict = verified.verdict
       record.detail.argv = plan.argv
       if (!verified.verdict.ok) {

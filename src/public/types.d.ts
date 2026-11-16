@@ -148,6 +148,8 @@ export interface JobSummary {
   startedAt: number
   endedAt?: number
   progress?: JobProgress
+  /** Present on terminal jobs; the list endpoint carries it too. */
+  verdict?: Verdict
 }
 
 export interface JobDetail extends JobSummary {
