@@ -34,6 +34,7 @@ import { isAbsolute } from 'node:path'
 import { HOST_CODES, WiringError, errorResult, toErrorShape } from './errors.js'
 import { PANEL } from './panel.js'
 import { listDirectory } from './fs.js'
+import { pickFile } from './pick.js'
 
 /** Fixed route prefix. The Client hard-codes the same value. */
 export const ROUTE_PREFIX = '/api/kumquat'
@@ -391,6 +392,14 @@ export function createRouter(options) {
             return fail(400, HOST_CODES.INPUT, '目录无法读取', '检查路径是否存在、是否有读取权限。')
           }
         }
+        case 'pick': {
+          if (method !== 'POST') return methodNotAllowed('POST')
+          const picked = await pickFile()
+          if (!picked.supported) {
+            return fail(501, HOST_CODES.WIRING, '宿主不支持系统文件对话框', '改用内置文件浏览。')
+          }
+          return { status: 200, body: picked.canceled ? { canceled: true } : { path: picked.path } }
+        }
         case 'probe': {
           if (method !== 'POST') return methodNotAllowed('POST')
           // `path` is the documented field; `input` is the Client's spelling.
@@ -521,4 +530,5 @@ export function createRouter(options) {
     }
   }
 }
+
 

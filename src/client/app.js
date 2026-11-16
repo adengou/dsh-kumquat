@@ -112,8 +112,18 @@ export function createPanel(React) {
     }
 
     const pick = async (slot) => {
-      // Open our own read-only browser: native dialogs are unavailable in the
-      // web client and unreliable in the desktop one.
+      // Desktop: let the Host open the OS file dialog, which returns a real
+      // absolute path. Web (or a Host without Electron): fall back to the
+      // in-panel browser.
+      if (typeof api.pick === 'function') {
+        const result = await api.pick()
+        if (result.ok && result.data && typeof result.data.path === 'string') {
+          const parsed = parsePathInput(result.data.path)
+          if (parsed.ok === true) loadFile(slot, parsed.path, parsed.name)
+          return
+        }
+        if (result.ok && result.data && result.data.canceled === true) return
+      }
       setDialogSlot(slot)
     }
 

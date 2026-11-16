@@ -20,6 +20,7 @@
 export const DEFAULT_ENDPOINTS = Object.freeze({
   capabilities: Object.freeze({ method: 'GET', path: '/api/kumquat/capabilities' }),
   fs: Object.freeze({ method: 'GET', path: '/api/kumquat/fs' }),
+  pick: Object.freeze({ method: 'POST', path: '/api/kumquat/pick' }),
   probe: Object.freeze({ method: 'POST', path: '/api/kumquat/probe' }),
   run: Object.freeze({ method: 'POST', path: '/api/kumquat/run' }),
   job: Object.freeze({ method: 'GET', path: '/api/kumquat/jobs/{id}' }),
@@ -264,6 +265,9 @@ export function createApi(ctx = {}) {
   return Object.freeze({
     async capabilities() {
       return call('capabilities')
+    },
+    async pick() {
+      return call('pick', { body: {} })
     },
     async fsList(dir) {
       return call('fs', { query: typeof dir === 'string' && dir !== '' ? { path: dir } : {} })
@@ -557,6 +561,9 @@ export function createFakeApi(options = {}) {
       }
       return ok({ ...FAKE_CAPABILITIES })
     },
+    async pick() {
+      return fail('E_OFFLINE', '演示模式没有系统文件对话框', '改用「粘贴路径」。')
+    },
     async fsList(dir) {
       return fail('E_OFFLINE', '演示模式没有目录列表', '改用「粘贴路径」。')
     },
@@ -640,5 +647,7 @@ export function createFakeApi(options = {}) {
     },
   })
 }
+
+
 
 

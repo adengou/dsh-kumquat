@@ -1,4 +1,4 @@
-﻿# Kumquat（金桔）
+# Kumquat（金桔）
 
 DeepSeek Harness 的媒体插件：**格式转换**与**视频取景做 GIF**，产物出厂前自动验收。
 
