@@ -227,12 +227,25 @@ export function createService(options = {}) {
     const uploadsRoot = path.join(options.binaryRoot || path.join(os.homedir(), '.dsh', 'kumquat'), 'uploads')
     const fromUpload = path.resolve(task.input).startsWith(uploadsRoot + path.sep)
     const preferred = preferredDir || outputDirOption || (fromUpload ? fallbackOutputDir : path.dirname(path.resolve(task.input)))
-    if (await canFfmpegWrite(preferred)) return { dir: preferred, note: null }
+    if (await canFfmpegWrite(preferred)) return { dir: preferred, targetDir: preferred, note: null }
     await fs.mkdir(fallbackOutputDir, { recursive: true }).catch(() => {})
     if (await canFfmpegWrite(fallbackOutputDir)) {
-      return { dir: fallbackOutputDir, note: `目标目录不可写，成品已改到 ${fallbackOutputDir}` }
+      // Encode where ffmpeg can write, then move the finished file into the
+      // folder the user picked: Node can write where ffmpeg is blocked.
+      return { dir: fallbackOutputDir, targetDir: preferred, note: null }
     }
-    return { dir: preferred, note: null }
+    return { dir: preferred, targetDir: preferred, note: null }
+  }
+
+  async function commitOutput(source, dest, fallbackDir) {
+    try {
+      await commit(source, dest)
+      return dest
+    } catch (error) {
+      const alt = await uniquePath(fallbackDir, path.basename(dest))
+      await commit(source, alt)
+      return alt
+    }
   }
 
   async function runTask(jobId, task, signal, preferredDir) {
@@ -246,6 +259,7 @@ export function createService(options = {}) {
     }
     const chosen = await pickOutputDir(task, preferredDir)
     const outputDir = chosen.dir
+    const targetDir = chosen.targetDir || chosen.dir
     if (chosen.note !== null) {
       const jobRecord = jobs.get(jobId)
       if (jobRecord) {
@@ -254,9 +268,10 @@ export function createService(options = {}) {
       }
     }
     await fs.mkdir(outputDir, { recursive: true })
+    await fs.mkdir(targetDir, { recursive: true }).catch(() => {})
     const ext = task.kind === 'gif' ? '.gif' : `.${String(task.to).replace(/^\./, '').toLowerCase()}`
     const stem = path.basename(task.input, path.extname(task.input))
-    const finalPath = await uniquePath(outputDir, `${stem}${ext}`)
+    let finalPath = await uniquePath(targetDir, `${stem}${ext}`)
     // Temporary files live in a private subfolder so a killed encoder cannot
     // leave a stray ".part" next to the user's files. Same volume, atomic rename.
     const partDir = path.join(outputDir, '.kumquat-tmp')
@@ -294,7 +309,7 @@ export function createService(options = {}) {
         })
         if (nextVerified.verdict.ok) {
           await fs.rm(tempPath, { force: true })
-          await commit(nextTemp, finalPath)
+          finalPath = await commitOutput(nextTemp, finalPath, outputDir)
           verified = nextVerified
           verified.verdict.repairs = repairs
           break
@@ -311,7 +326,12 @@ export function createService(options = {}) {
       verified.verdict.evidencePath = evidencePath
 
       if (verified.verdict.ok) {
-        await commit(tempPath, finalPath)
+        finalPath = await commitOutput(tempPath, finalPath, outputDir)
+        if (record && path.resolve(path.dirname(finalPath)) !== path.resolve(targetDir)) {
+          const note = '所选目录不可写，成品已放在 ' + finalPath
+          record.summary.note = note
+          record.detail.note = note
+        }
       } else {
         await fs.rm(tempPath, { force: true })
       }

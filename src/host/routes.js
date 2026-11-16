@@ -395,7 +395,7 @@ export function createRouter(options) {
         }
         case 'pick': {
           if (method !== 'POST') return methodNotAllowed('POST')
-          const picked = await pickFile()
+          const picked = await pickFile({ directory: body && body.mode === 'dir' })
           if (!picked.supported) {
             return fail(501, HOST_CODES.WIRING, '宿主不支持系统文件对话框', '改用内置文件浏览。')
           }

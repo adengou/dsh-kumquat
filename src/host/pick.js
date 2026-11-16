@@ -45,9 +45,13 @@ export async function pickFile(options = {}) {
     window = undefined
   }
 
+  const directory = options.directory === true
+  const title = directory ? '选择输出文件夹' : '选择视频或音频文件'
+  const properties = directory ? ['openDirectory', 'createDirectory'] : ['openFile']
+  const dialogOptions = directory ? { title, properties } : { title, properties, filters }
   const result = window
-    ? await dialog.showOpenDialog(window, { title: '选择视频或音频文件', properties: ['openFile'], filters })
-    : await dialog.showOpenDialog({ title: '选择视频或音频文件', properties: ['openFile'], filters })
+    ? await dialog.showOpenDialog(window, dialogOptions)
+    : await dialog.showOpenDialog(dialogOptions)
 
   if (!result || result.canceled === true) return { supported: true, canceled: true }
   const first = Array.isArray(result.filePaths) ? result.filePaths[0] : ''

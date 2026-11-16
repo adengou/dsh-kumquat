@@ -2119,8 +2119,8 @@ function createApi(ctx = {}) {
     async capabilities() {
       return call('capabilities')
     },
-    async pick() {
-      return call('pick', { body: {} })
+    async pick(mode) {
+      return call('pick', { body: mode === 'dir' ? { mode: 'dir' } : {} })
     },
     async reveal(path) {
       if (typeof path !== 'string' || path === '') return { ok: false, error: { code: 'E_INPUT', message: '没有输出路径', hint: '' }, source: 'none' }
@@ -4146,7 +4146,7 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal })
  * @param {{ useState: Function, useEffect: Function, useRef: Function }} React
  */
 
-const KQ_VERSION = '0.0.31'
+const KQ_VERSION = '0.0.32'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {
@@ -4300,6 +4300,18 @@ function createPanel(React) {
     }, [activeKey, api, store])
 
     const dispatch = store.dispatch
+    const chooseOutputDir = async () => {
+      if (typeof api.pick === 'function') {
+        const result = await api.pick('dir')
+        if (result.ok && result.data && typeof result.data.path === 'string') {
+          setOutputDir(result.data.path)
+          return
+        }
+        if (result.ok && result.data && result.data.canceled === true) return
+      }
+      setDirDialog(true)
+    }
+
     const setOutputDir = (dir) => {
       setOutputDirState(dir)
       try { window.localStorage.setItem('kumquat.outputDir', dir) } catch { /* ignore */ }
@@ -4498,7 +4510,7 @@ function createPanel(React) {
           onCopyToggle: (checked) => dispatch({ type: ACT.COPY, copy: checked }),
           onSubmit: () => submit('convert'),
           outputDir,
-          onChooseOutput: () => setDirDialog(true),
+          onChooseOutput: chooseOutputDir,
         })
         : null,
       state.screen === 'gif'
@@ -4516,7 +4528,7 @@ function createPanel(React) {
           onField: (field, value) => dispatch({ type: ACT.GIF_FIELD, field, value }),
           onSubmit: () => submit('gif'),
           outputDir,
-          onChooseOutput: () => setDirDialog(true),
+          onChooseOutput: chooseOutputDir,
         })
         : null,
       state.screen !== 'home'
@@ -4551,6 +4563,8 @@ function createPanel(React) {
 
   return KumquatPanel
 }
+
+
 
 
 

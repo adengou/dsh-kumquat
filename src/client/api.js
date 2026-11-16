@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Kumquat · 宿主接口（浏览器半身）。
  *
  * 真实路由由 S5 提供；这里只定义契约、容错与可注入的 fake：
@@ -267,8 +267,8 @@ export function createApi(ctx = {}) {
     async capabilities() {
       return call('capabilities')
     },
-    async pick() {
-      return call('pick', { body: {} })
+    async pick(mode) {
+      return call('pick', { body: mode === 'dir' ? { mode: 'dir' } : {} })
     },
     async reveal(path) {
       if (typeof path !== 'string' || path === '') return { ok: false, error: { code: 'E_INPUT', message: '没有输出路径', hint: '' }, source: 'none' }

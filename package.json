@@ -1,6 +1,6 @@
 {
   "name": "dsh-kumquat",
-  "version": "0.0.31",
+  "version": "0.0.32",
   "type": "module",
   "description": "DSH plugin: format conversion and video-to-GIF, with built-in verification.",
   "license": "MIT",

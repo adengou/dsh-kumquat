@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Kumquat · 面板根组件与副作用编排。
  *
  * 组件只画逻辑层给的视图模型；选文件、探测、提交、轮询、取消、修复、复制、
@@ -176,6 +176,18 @@ export function createPanel(React) {
     }, [activeKey, api, store])
 
     const dispatch = store.dispatch
+    const chooseOutputDir = async () => {
+      if (typeof api.pick === 'function') {
+        const result = await api.pick('dir')
+        if (result.ok && result.data && typeof result.data.path === 'string') {
+          setOutputDir(result.data.path)
+          return
+        }
+        if (result.ok && result.data && result.data.canceled === true) return
+      }
+      setDirDialog(true)
+    }
+
     const setOutputDir = (dir) => {
       setOutputDirState(dir)
       try { window.localStorage.setItem('kumquat.outputDir', dir) } catch { /* ignore */ }
@@ -374,7 +386,7 @@ export function createPanel(React) {
           onCopyToggle: (checked) => dispatch({ type: ACT.COPY, copy: checked }),
           onSubmit: () => submit('convert'),
           outputDir,
-          onChooseOutput: () => setDirDialog(true),
+          onChooseOutput: chooseOutputDir,
         })
         : null,
       state.screen === 'gif'
@@ -392,7 +404,7 @@ export function createPanel(React) {
           onField: (field, value) => dispatch({ type: ACT.GIF_FIELD, field, value }),
           onSubmit: () => submit('gif'),
           outputDir,
-          onChooseOutput: () => setDirDialog(true),
+          onChooseOutput: chooseOutputDir,
         })
         : null,
       state.screen !== 'home'
@@ -427,6 +439,8 @@ export function createPanel(React) {
 
   return KumquatPanel
 }
+
+
 
 
 
