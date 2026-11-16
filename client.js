@@ -1869,6 +1869,7 @@ function applyGifText(state, handle, raw) {
 /** 默认路由表。ctx.endpoints 按方法名整体覆盖，S5 改路径不用动界面。 */
 const DEFAULT_ENDPOINTS = Object.freeze({
   capabilities: Object.freeze({ method: 'GET', path: '/api/kumquat/capabilities' }),
+  fs: Object.freeze({ method: 'GET', path: '/api/kumquat/fs' }),
   probe: Object.freeze({ method: 'POST', path: '/api/kumquat/probe' }),
   run: Object.freeze({ method: 'POST', path: '/api/kumquat/run' }),
   job: Object.freeze({ method: 'GET', path: '/api/kumquat/jobs/{id}' }),
@@ -2113,6 +2114,9 @@ function createApi(ctx = {}) {
   return Object.freeze({
     async capabilities() {
       return call('capabilities')
+    },
+    async fsList(dir) {
+      return call('fs', { query: typeof dir === 'string' && dir !== '' ? { path: dir } : {} })
     },
     async probe(input) {
       if (typeof input !== 'string' || input.trim() === '') {
@@ -2403,9 +2407,12 @@ function createFakeApi(options = {}) {
       }
       return ok({ ...FAKE_CAPABILITIES })
     },
+    async fsList(dir) {
+      return fail('E_OFFLINE', '演示模式没有目录列表', '改用「粘贴路径」。')
+    },
     async probe(input) {
       if (typeof input !== 'string' || !/^([A-Za-z]:[\\/]|\\\\|\/)/.test(input)) {
-        return fail('E_INPUT', '需要绝对路径', '例如 C:\\Users\\你\\Videos\\猫猫.mp4。')
+        return fail('E_INPUT', '需要绝对路径', '例如 D:\\示例\\video.mp4。')
       }
       const facts = fakeFacts(input)
       if (facts === null) return fail('E_INPUT', '不认识的媒体文件', '支持 mp4/mkv/mov/webm/avi/mp3/m4a/wav/flac。')
@@ -2483,6 +2490,8 @@ function createFakeApi(options = {}) {
     },
   })
 }
+
+
 
 
 /* ── clipboard.js ── */
@@ -2699,6 +2708,28 @@ const CSS_TEXT = `
 .kq-paste{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;margin:10px 0 0}
 .kq-paste--prompt{border:1px solid var(--kq-accent-line);background:var(--kq-accent-weak);
   border-radius:var(--kq-r-md);padding:12px;margin-top:2px}
+
+/* ── 文件浏览对话框 ─────────────────────────────────── */
+.kq-fs{width:min(720px,100%);max-height:min(88vh,860px);display:flex;flex-direction:column;
+  background:var(--kq-card);color:var(--kq-text);border:1px solid var(--kq-line);
+  border-radius:var(--kq-r-lg);box-shadow:var(--kq-shadow);overflow:hidden;
+  font-family:var(--kq-font);font-size:var(--kq-fs-2);line-height:var(--kq-lh);text-align:left}
+.kq-fs__head{display:flex;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid var(--kq-line)}
+.kq-fs__title{font-size:var(--kq-fs-3);font-weight:600}
+.kq-fs__tag{color:var(--kq-dim);font-size:var(--kq-fs-1)}
+.kq-fs__path{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--kq-line)}
+.kq-fs__list{flex:1;min-height:280px;overflow:auto;padding:6px}
+.kq-fs__row{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;
+  background:none;border:0;border-radius:var(--kq-r-sm);color:var(--kq-text);
+  font:inherit;text-align:left;cursor:pointer}
+.kq-fs__row:hover{background:var(--kq-raise)}
+.kq-fs__row--sel{background:var(--kq-accent-weak);outline:1px solid var(--kq-accent-line)}
+.kq-fs__row--media .kq-fs__name{font-weight:600}
+.kq-fs__name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kq-fs__tag{color:var(--kq-dim);font-size:var(--kq-fs-1)}
+.kq-fs__foot{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--kq-line)}
+.kq-fs__hint{flex:1;min-width:0;color:var(--kq-dim);font-size:var(--kq-fs-1);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kq-paste__field{flex:1;min-width:220px}
 .kq-paste__actions{display:flex;gap:8px;padding-top:20px}
 .kq-field__label{display:block;font-size:var(--kq-fs-1);color:var(--kq-muted);margin-bottom:5px}
@@ -2882,6 +2913,8 @@ const KQ_ICON_PATHS = {
   copy: ['M9 9h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z', 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'],
   download: ['M12 4v12', 'M7 11l5 5 5-5', 'M4 20h16'],
   film: ['M4 4h16v16H4z', 'M4 9h16', 'M4 15h16', 'M9 4v16', 'M15 4v16'],
+  folder: ['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'],
+  file: ['M6 3h8l4 4v14H6z', 'M14 3v4h4'],
   audio: ['M9 18V6l10-2v12', 'M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0z', 'M19 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z'],
 }
 
@@ -3123,6 +3156,134 @@ function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDraft, on
           title: '移除',
         }, h(KqIcon, { name: 'close', size: 14 })))
       : h('p', { className: 'kq-hint' }, '还没有文件。文件只登记路径，不上传、不复制。'))
+}
+
+
+/* ── components/FileDialog.js ── */
+/**
+ * 文件浏览对话框：列出目录、进入子目录、选中媒体文件后回填绝对路径。
+ * 只读；不复制、不上传。桌面与 web 共用同一套实现，不依赖宿主原生对话框。
+ */
+
+
+const MEDIA_EXT = new Set(['mp4', 'mkv', 'mov', 'webm', 'avi', 'mp3', 'm4a', 'wav', 'flac', 'gif'])
+
+/** @param {string} name */
+function extOf(name) {
+  const index = name.lastIndexOf('.')
+  return index === -1 ? '' : name.slice(index + 1).toLowerCase()
+}
+
+/**
+ * @param {{
+ *   React: any,
+ *   api: any,
+ *   slot: 'convert' | 'gif',
+ *   onClose: Function,
+ *   onChoose: (path: string, name: string) => void,
+ * }} props
+ */
+function FileDialog({ React, api, slot, onClose, onChoose }) {
+  const [listing, setListing] = React.useState(null)
+  const [pathText, setPathText] = React.useState('')
+  const [selected, setSelected] = React.useState(null)
+  const [error, setError] = React.useState(null)
+  const [loading, setLoading] = React.useState(false)
+
+  const load = async (target) => {
+    setLoading(true)
+    setError(null)
+    setSelected(null)
+    const result = await api.fsList(target)
+    setLoading(false)
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    setListing(result.data)
+    setPathText(result.data.path)
+  }
+
+  React.useEffect(() => {
+    void load('')
+  }, [])
+
+  const entries = listing && Array.isArray(listing.entries) ? listing.entries : []
+  const parent = listing && typeof listing.parent === 'string' ? listing.parent : ''
+
+  return h('div', {
+    className: 'kq-veil',
+    role: 'dialog',
+    'aria-modal': 'true',
+    'aria-label': '添加文件',
+    onClick: (event) => { if (event.target === event.currentTarget) onClose() },
+    onKeyDown: (event) => { if (event.key === 'Escape') onClose() },
+  },
+  h('div', { className: 'kq-fs' },
+    h('div', { className: 'kq-fs__head' },
+      h(KqIcon, { name: 'film', size: 16 }),
+      h('span', { className: 'kq-fs__title' }, '添加文件'),
+      h('span', { className: 'kq-fs__tag' }, slot === 'gif' ? '选一段视频' : '选视频或音频'),
+      h('span', { style: { flex: 1 } }),
+      h(GhostButton, { label: '取消', onClick: onClose })),
+    h('div', { className: 'kq-fs__path' },
+      h(GhostButton, {
+        label: '上一级',
+        onClick: () => { if (parent !== '') void load(parent) },
+      }),
+      h('input', {
+        type: 'text',
+        className: 'kq-input',
+        style: { flex: 1 },
+        value: pathText,
+        spellCheck: 'false',
+        autoComplete: 'off',
+        'aria-label': '目录路径',
+        onChange: (event) => setPathText(event.target.value),
+        onKeyDown: (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            void load(pathText)
+          }
+        },
+      })),
+    h('div', { className: 'kq-fs__list' },
+      loading ? h('p', { className: 'kq-hint' }, '正在读取目录…') : null,
+      error ? h('p', { className: 'kq-error', role: 'alert' }, `${error.message}${error.hint ? ` ${error.hint}` : ''}`) : null,
+      !loading && !error && entries.length === 0 ? h('p', { className: 'kq-hint' }, '这个目录是空的。') : null,
+      entries.map((entry) => {
+        const isDir = entry.type === 'dir'
+        const isMedia = !isDir && MEDIA_EXT.has(extOf(entry.name))
+        const isSelected = selected !== null && selected.path === entry.path
+        return h('button', {
+          key: entry.path,
+          type: 'button',
+          className: [
+            'kq-fs__row',
+            isSelected ? 'kq-fs__row--sel' : '',
+            isMedia ? 'kq-fs__row--media' : '',
+          ].filter(Boolean).join(' '),
+          title: entry.path,
+          onClick: () => {
+            if (isDir) void load(entry.path)
+            else setSelected(entry)
+          },
+          onDoubleClick: () => {
+            if (isDir) void load(entry.path)
+            else onChoose(entry.path, entry.name)
+          },
+        },
+        h(KqIcon, { name: isDir ? 'folder' : isMedia ? (slot === 'gif' ? 'film' : 'film') : 'file', size: 16 }),
+        h('span', { className: 'kq-fs__name' }, entry.name),
+        h('span', { className: 'kq-fs__tag' }, isDir ? '目录' : extOf(entry.name).toUpperCase() || '文件'))
+      })),
+    h('div', { className: 'kq-fs__foot' },
+      h('span', { className: 'kq-fs__hint', title: selected ? selected.path : '' },
+        selected ? selected.path : '单击选中，双击直接打开；只支持本地绝对路径。'),
+      h(PrimaryButton, {
+        label: '选择',
+        onClick: () => { if (selected !== null) onChoose(selected.path, selected.name) },
+      }))))
 }
 
 
@@ -3791,6 +3952,7 @@ function createPanel(React) {
     const pickFile = props.pickFile
     const [, force] = React.useState(0)
     const [refreshKey, setRefreshKey] = React.useState(0)
+    const [dialogSlot, setDialogSlot] = React.useState(null)
     const storeRef = React.useRef(null)
     const abortRef = React.useRef(null)
     if (storeRef.current === null) storeRef.current = createStore(reducer, initialState())
@@ -3872,11 +4034,9 @@ function createPanel(React) {
     }
 
     const pick = async (slot) => {
-      // Never depend on a host file dialog: in the desktop client `pickFile`
-      // can exist yet never resolve, which reads as a dead button. Always open
-      // the path field; it works in both clients.
-      dispatch({ type: ACT.PASTE_OPEN, slot, open: true })
-      dispatch({ type: ACT.NOTICE, notice: '粘贴文件的绝对路径后按回车，文件只登记路径，不上传、不复制。' })
+      // Open our own read-only browser: native dialogs are unavailable in the
+      // web client and unreliable in the desktop one.
+      setDialogSlot(slot)
     }
 
     const submitPaste = (slot) => {
@@ -4020,6 +4180,18 @@ function createPanel(React) {
         ? h(ResultsPanel, { model: results, onToggle: (id) => dispatch({ type: ACT.EXPAND, id }), onCopy: copy, onCancel: cancelJob, onRepair: repair })
         : null,
       state.notice ? h('p', { className: 'kq-hint', role: 'status' }, state.notice) : null),
+    dialogSlot !== null
+      ? h(FileDialog, {
+        React,
+        api,
+        slot: dialogSlot,
+        onClose: () => setDialogSlot(null),
+        onChoose: (path, name) => {
+          loadFile(dialogSlot, path, name)
+          setDialogSlot(null)
+        },
+      })
+      : null,
     h('div', { className: 'kq-foot' },
       balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone }),
       h('p', { className: 'kq-foot__note' }, '文件以本机路径登记，不上传、不复制；每次任务自动验收并留证据。')))

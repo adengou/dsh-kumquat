@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Kumquat · 面板根组件与副作用编排。
  *
  * 组件只画逻辑层给的视图模型；选文件、探测、提交、轮询、取消、修复、复制、
@@ -20,6 +20,7 @@ import { HomeScreen } from './screens/HomeScreen.js'
 import { ConvertScreen } from './screens/ConvertScreen.js'
 import { GifScreen } from './screens/GifScreen.js'
 import { ResultsPanel } from './screens/ResultsPanel.js'
+import { FileDialog } from './components/FileDialog.js'
 export function createPanel(React) {
   /**
    * @param {{ api?: any, pickFile?: Function, hostCtx?: any }} props
@@ -29,6 +30,7 @@ export function createPanel(React) {
     const pickFile = props.pickFile
     const [, force] = React.useState(0)
     const [refreshKey, setRefreshKey] = React.useState(0)
+    const [dialogSlot, setDialogSlot] = React.useState(null)
     const storeRef = React.useRef(null)
     const abortRef = React.useRef(null)
     if (storeRef.current === null) storeRef.current = createStore(reducer, initialState())
@@ -110,11 +112,9 @@ export function createPanel(React) {
     }
 
     const pick = async (slot) => {
-      // Never depend on a host file dialog: in the desktop client `pickFile`
-      // can exist yet never resolve, which reads as a dead button. Always open
-      // the path field; it works in both clients.
-      dispatch({ type: ACT.PASTE_OPEN, slot, open: true })
-      dispatch({ type: ACT.NOTICE, notice: '粘贴文件的绝对路径后按回车，文件只登记路径，不上传、不复制。' })
+      // Open our own read-only browser: native dialogs are unavailable in the
+      // web client and unreliable in the desktop one.
+      setDialogSlot(slot)
     }
 
     const submitPaste = (slot) => {
@@ -258,6 +258,18 @@ export function createPanel(React) {
         ? h(ResultsPanel, { model: results, onToggle: (id) => dispatch({ type: ACT.EXPAND, id }), onCopy: copy, onCancel: cancelJob, onRepair: repair })
         : null,
       state.notice ? h('p', { className: 'kq-hint', role: 'status' }, state.notice) : null),
+    dialogSlot !== null
+      ? h(FileDialog, {
+        React,
+        api,
+        slot: dialogSlot,
+        onClose: () => setDialogSlot(null),
+        onChoose: (path, name) => {
+          loadFile(dialogSlot, path, name)
+          setDialogSlot(null)
+        },
+      })
+      : null,
     h('div', { className: 'kq-foot' },
       balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone }),
       h('p', { className: 'kq-foot__note' }, '文件以本机路径登记，不上传、不复制；每次任务自动验收并留证据。')))

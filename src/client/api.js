@@ -19,6 +19,7 @@
 /** 默认路由表。ctx.endpoints 按方法名整体覆盖，S5 改路径不用动界面。 */
 export const DEFAULT_ENDPOINTS = Object.freeze({
   capabilities: Object.freeze({ method: 'GET', path: '/api/kumquat/capabilities' }),
+  fs: Object.freeze({ method: 'GET', path: '/api/kumquat/fs' }),
   probe: Object.freeze({ method: 'POST', path: '/api/kumquat/probe' }),
   run: Object.freeze({ method: 'POST', path: '/api/kumquat/run' }),
   job: Object.freeze({ method: 'GET', path: '/api/kumquat/jobs/{id}' }),
@@ -263,6 +264,9 @@ export function createApi(ctx = {}) {
   return Object.freeze({
     async capabilities() {
       return call('capabilities')
+    },
+    async fsList(dir) {
+      return call('fs', { query: typeof dir === 'string' && dir !== '' ? { path: dir } : {} })
     },
     async probe(input) {
       if (typeof input !== 'string' || input.trim() === '') {
@@ -553,9 +557,12 @@ export function createFakeApi(options = {}) {
       }
       return ok({ ...FAKE_CAPABILITIES })
     },
+    async fsList(dir) {
+      return fail('E_OFFLINE', '演示模式没有目录列表', '改用「粘贴路径」。')
+    },
     async probe(input) {
       if (typeof input !== 'string' || !/^([A-Za-z]:[\\/]|\\\\|\/)/.test(input)) {
-        return fail('E_INPUT', '需要绝对路径', '例如 C:\\Users\\你\\Videos\\猫猫.mp4。')
+        return fail('E_INPUT', '需要绝对路径', '例如 D:\\示例\\video.mp4。')
       }
       const facts = fakeFacts(input)
       if (facts === null) return fail('E_INPUT', '不认识的媒体文件', '支持 mp4/mkv/mov/webm/avi/mp3/m4a/wav/flac。')
@@ -633,3 +640,5 @@ export function createFakeApi(options = {}) {
     },
   })
 }
+
+

@@ -116,6 +116,28 @@ export const CSS_TEXT = `
 .kq-paste{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;margin:10px 0 0}
 .kq-paste--prompt{border:1px solid var(--kq-accent-line);background:var(--kq-accent-weak);
   border-radius:var(--kq-r-md);padding:12px;margin-top:2px}
+
+/* ── 文件浏览对话框 ─────────────────────────────────── */
+.kq-fs{width:min(720px,100%);max-height:min(88vh,860px);display:flex;flex-direction:column;
+  background:var(--kq-card);color:var(--kq-text);border:1px solid var(--kq-line);
+  border-radius:var(--kq-r-lg);box-shadow:var(--kq-shadow);overflow:hidden;
+  font-family:var(--kq-font);font-size:var(--kq-fs-2);line-height:var(--kq-lh);text-align:left}
+.kq-fs__head{display:flex;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid var(--kq-line)}
+.kq-fs__title{font-size:var(--kq-fs-3);font-weight:600}
+.kq-fs__tag{color:var(--kq-dim);font-size:var(--kq-fs-1)}
+.kq-fs__path{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--kq-line)}
+.kq-fs__list{flex:1;min-height:280px;overflow:auto;padding:6px}
+.kq-fs__row{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;
+  background:none;border:0;border-radius:var(--kq-r-sm);color:var(--kq-text);
+  font:inherit;text-align:left;cursor:pointer}
+.kq-fs__row:hover{background:var(--kq-raise)}
+.kq-fs__row--sel{background:var(--kq-accent-weak);outline:1px solid var(--kq-accent-line)}
+.kq-fs__row--media .kq-fs__name{font-weight:600}
+.kq-fs__name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kq-fs__tag{color:var(--kq-dim);font-size:var(--kq-fs-1)}
+.kq-fs__foot{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--kq-line)}
+.kq-fs__hint{flex:1;min-width:0;color:var(--kq-dim);font-size:var(--kq-fs-1);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kq-paste__field{flex:1;min-width:220px}
 .kq-paste__actions{display:flex;gap:8px;padding-top:20px}
 .kq-field__label{display:block;font-size:var(--kq-fs-1);color:var(--kq-muted);margin-bottom:5px}

@@ -33,6 +33,7 @@ import { isAbsolute } from 'node:path'
 
 import { HOST_CODES, WiringError, errorResult, toErrorShape } from './errors.js'
 import { PANEL } from './panel.js'
+import { listDirectory } from './fs.js'
 
 /** Fixed route prefix. The Client hard-codes the same value. */
 export const ROUTE_PREFIX = '/api/kumquat'
@@ -382,6 +383,14 @@ export function createRouter(options) {
         case 'capabilities':
           if (method !== 'GET') return methodNotAllowed('GET')
           return { status: 200, body: await capabilities() }
+        case 'fs': {
+          if (method !== 'GET') return methodNotAllowed('GET')
+          try {
+            return { status: 200, body: await listDirectory(searchParams.get('path') || '') }
+          } catch {
+            return fail(400, HOST_CODES.INPUT, '目录无法读取', '检查路径是否存在、是否有读取权限。')
+          }
+        }
         case 'probe': {
           if (method !== 'POST') return methodNotAllowed('POST')
           // `path` is the documented field; `input` is the Client's spelling.
@@ -512,3 +521,4 @@ export function createRouter(options) {
     }
   }
 }
+

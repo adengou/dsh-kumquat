@@ -1,4 +1,4 @@
-# 验证记录
+﻿# 验证记录
 
 截至 2026-11-16。以下均为本机实测（Windows 11、ffmpeg 6.1.1、Node 24.16）。
 
@@ -6,7 +6,7 @@
 
 | 项 | 命令 | 结果 |
 |---|---|---|
-| 单元测试 | `node --test --test-isolation=none "test/unit/*.test.mjs"` | 339 条全部通过 |
+| 单元测试 | `node --test --test-isolation=none "test/unit/*.test.mjs"` | 342 条全部通过 |
 | 端到端 | `node --test --test-isolation=none "test/e2e/*.test.mjs"` | 16 条全部通过 |
 | 零依赖 | `node scripts/check-deps.mjs` | runtime 与 build 均无依赖 |
 
@@ -32,6 +32,7 @@
 - 侧栏出现「金桔」；
 - 点击后弹出面板，标题 `Kumquat 金桔`，右上角 `ffmpeg 6.1.1 · 就绪`；
 - 首页两张任务卡、最近、余额未配置、页脚说明正常；
+- 点「添加文件」弹出文件对话框，目录列表可进入、可选中、双击可打开；选中后文件条显示 `1280×720 · 0:12 · 1.7 MB`；
 - 点「格式转换」进入表单：文件区、九个格式胶囊、仅换封装、开始转换、结果空态；
 - 浏览器控制台零错误；
 - 走完整流程：填绝对路径 → 识别 `1280×720 · 0:12 · 1.7 MB` → 选 MKV → 转换 → 验收通过，产物 1.76 MB、时长 12.021s（期望 12 ± 0.2s）。
@@ -68,3 +69,4 @@ node --test --test-isolation=none "test/e2e/*.test.mjs"
 ```
 
 沙箱里 `node --test` 会为每个文件 spawn 子进程并报 EPERM，必须带 `--test-isolation=none`。
+

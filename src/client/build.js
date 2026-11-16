@@ -43,6 +43,7 @@ const MODULES = [
   'components/Section.js',
   'components/TaskCard.js',
   'components/FileStrip.js',
+  'components/FileDialog.js',
   'components/FormatPill.js',
   'components/CopyToggle.js',
   'components/TimelineRange.js',
