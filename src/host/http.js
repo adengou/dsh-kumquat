@@ -87,6 +87,12 @@ export function createHttpHandler(handle, options = {}) {
 
       /** @type {unknown} */
       let body
+      const url = new URL(request.url ?? '/', 'http://kumquat.invalid')
+      if (method === 'POST' && typeof options.upload === 'function' && url.pathname.endsWith('/upload')) {
+        const uploaded = await options.upload(request, url)
+        writeJson(response, uploaded)
+        return
+      }
       if (method === 'POST') {
         const mediaType = (request.headers['content-type'] ?? '').split(';', 1)[0]?.trim().toLowerCase()
         const text = await readBody(request)
@@ -124,7 +130,6 @@ export function createHttpHandler(handle, options = {}) {
         }
       }
 
-      const url = new URL(request.url ?? '/', 'http://kumquat.invalid')
       const result = await handle({
         method,
         pathname: url.pathname,

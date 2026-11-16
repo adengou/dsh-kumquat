@@ -21,6 +21,7 @@ import { ConvertScreen } from './screens/ConvertScreen.js'
 import { GifScreen } from './screens/GifScreen.js'
 import { ResultsPanel } from './screens/ResultsPanel.js'
 import { FileDialog } from './components/FileDialog.js'
+import { chooseLocalFile, uploadFile } from './pickfile.js'
 export function createPanel(React) {
   /**
    * @param {{ api?: any, pickFile?: Function, hostCtx?: any }} props
@@ -112,18 +113,21 @@ export function createPanel(React) {
     }
 
     const pick = async (slot) => {
-      // Desktop: let the Host open the OS file dialog, which returns a real
-      // absolute path. Web (or a Host without Electron): fall back to the
-      // in-panel browser.
-      if (typeof api.pick === 'function') {
-        const result = await api.pick()
-        if (result.ok && result.data && typeof result.data.path === 'string') {
-          const parsed = parsePathInput(result.data.path)
-          if (parsed.ok === true) loadFile(slot, parsed.path, parsed.name)
-          return
-        }
-        if (result.ok && result.data && result.data.canceled === true) return
+      // The hidden file input opens the OS dialog in both clients. Desktop can
+      // return a real path; the web client uploads the chosen bytes to the Host.
+      const chosen = await chooseLocalFile()
+      if (!chosen.ok) return
+      if (chosen.path !== '') {
+        loadFile(slot, chosen.path, chosen.name)
+        return
       }
+      dispatch({ type: ACT.NOTICE, notice: '正在把所选文件复制到本机临时目录…' })
+      const uploaded = await uploadFile(chosen.file)
+      if (uploaded.ok) {
+        loadFile(slot, uploaded.path, uploaded.name)
+        return
+      }
+      dispatch({ type: ACT.NOTICE, notice: uploaded.error.message })
       setDialogSlot(slot)
     }
 

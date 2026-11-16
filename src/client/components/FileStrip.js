@@ -95,5 +95,5 @@ export function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDr
           'aria-label': `移除文件 ${file.name}`,
           title: '移除',
         }, h(KqIcon, { name: 'close', size: 14 })))
-      : h('p', { className: 'kq-hint' }, '还没有文件。文件只登记路径，不上传、不复制。'))
+      : h('p', { className: 'kq-hint' }, '还没有文件。桌面端直接从系统对话框选，网页端会复制到本机临时目录后处理。'))
 }

@@ -36,6 +36,7 @@ const MODULES = [
   'api.js',
   'clipboard.js',
   'picker.js',
+  'pickfile.js',
   'styles.js',
   'components/Icon.js',
   'components/Badge.js',

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Kumquat Host plugin.
  *
  * The bundle's Host half does two things:
@@ -22,6 +22,7 @@ import { createBalance } from './balance.js'
 import { describeConfig, readRowConfig, resolveConfig } from './config.js'
 import { createInstaller } from './ffmpeg.js'
 import { createHttpHandler } from './http.js'
+import { createUploader } from './upload.js'
 import { createProgressTable } from './progress.js'
 import { createRouter, ROUTE_PREFIX } from './routes.js'
 import { createServiceProvider } from './service.js'
@@ -166,7 +167,7 @@ export async function apply(ctx, config) {
       return connection.requestRejection(request)
     }
 
-    const handler = createHttpHandler(router, { authorize, logger })
+    const handler = createHttpHandler(router, { authorize, logger, upload: createUploader({ root: resolved.binaryRoot }) })
     webCtx.effect(
       () => webCtx.webServer.register({ kind: 'prefix', path: ROUTE_PREFIX, handler }),
       'kumquat: /api/kumquat routes',
@@ -175,3 +176,4 @@ export async function apply(ctx, config) {
 
   logger.info(`kumquat: host ready; ${JSON.stringify(describeConfig(resolved))}`)
 }
+

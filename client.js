@@ -2598,6 +2598,97 @@ async function requestPath(pickFile) {
 }
 
 
+/* ── pickfile.js ── */
+/**
+ * 系统文件选择：用隐藏的 <input type="file"> 打开原生对话框。
+ * 桌面端尽量取回真实绝对路径；网页端拿不到路径，就把文件交给宿主写入临时目录。
+ */
+
+/** @param {File} file */
+function electronPath(file) {
+  if (file && typeof file.path === 'string' && file.path !== '') return file.path
+  try {
+    const req = typeof window !== 'undefined' && typeof window.require === 'function' ? window.require : null
+    if (req !== null) {
+      const electron = req('electron')
+      const webUtils = electron && electron.webUtils
+      if (webUtils && typeof webUtils.getPathForFile === 'function') {
+        const resolved = webUtils.getPathForFile(file)
+        if (typeof resolved === 'string' && resolved !== '') return resolved
+      }
+    }
+  } catch {
+    /* fall through to upload */
+  }
+  return ''
+}
+
+/**
+ * @returns {Promise<{ ok: true, file: File, name: string, path: string } | { ok: false, reason: 'cancel' }>}
+ */
+function chooseLocalFile() {
+  return new Promise((resolve) => {
+    if (typeof document === 'undefined') {
+      resolve({ ok: false, reason: 'cancel' })
+      return
+    }
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'video/*,audio/*,.mkv,.flac,.m4a,.wav,.webm'
+    input.style.position = 'fixed'
+    input.style.left = '-9999px'
+    document.body.appendChild(input)
+    const done = (value) => {
+      input.remove()
+      resolve(value)
+    }
+    input.addEventListener('change', () => {
+      const file = input.files && input.files[0]
+      if (!file) {
+        done({ ok: false, reason: 'cancel' })
+        return
+      }
+      done({ ok: true, file, name: file.name, path: electronPath(file) })
+    })
+    input.addEventListener('cancel', () => done({ ok: false, reason: 'cancel' }))
+    input.click()
+  })
+}
+
+/**
+ * @param {File} file
+ * @returns {Promise<{ ok: true, path: string, name: string } | { ok: false, error: { code: string, message: string, hint: string } }>}
+ */
+async function uploadFile(file) {
+  try {
+    const response = await fetch(`/api/kumquat/upload?name=${encodeURIComponent(file.name)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/octet-stream' },
+      body: file,
+    })
+    /** @type {any} */
+    let payload = null
+    try { payload = await response.json() } catch { payload = null }
+    if (!response.ok || !payload || typeof payload.path !== 'string') {
+      return {
+        ok: false,
+        error: (payload && payload.error) || {
+          code: 'E_UPLOAD',
+          message: '文件复制到临时目录失败',
+          hint: '改用桌面客户端，或点「粘贴路径」填绝对路径。',
+        },
+      }
+    }
+    return { ok: true, path: payload.path, name: typeof payload.name === 'string' ? payload.name : file.name }
+  } catch {
+    return {
+      ok: false,
+      error: { code: 'E_OFFLINE', message: '无法连接宿主', hint: '确认窗口还在，然后重试。' },
+    }
+  }
+}
+
+
 /* ── styles.js ── */
 /**
  * Kumquat · 全部样式，一个字符串。
@@ -3169,7 +3260,7 @@ function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDraft, on
           'aria-label': `移除文件 ${file.name}`,
           title: '移除',
         }, h(KqIcon, { name: 'close', size: 14 })))
-      : h('p', { className: 'kq-hint' }, '还没有文件。文件只登记路径，不上传、不复制。'))
+      : h('p', { className: 'kq-hint' }, '还没有文件。桌面端直接从系统对话框选，网页端会复制到本机临时目录后处理。'))
 }
 
 
@@ -4063,18 +4154,21 @@ function createPanel(React) {
     }
 
     const pick = async (slot) => {
-      // Desktop: let the Host open the OS file dialog, which returns a real
-      // absolute path. Web (or a Host without Electron): fall back to the
-      // in-panel browser.
-      if (typeof api.pick === 'function') {
-        const result = await api.pick()
-        if (result.ok && result.data && typeof result.data.path === 'string') {
-          const parsed = parsePathInput(result.data.path)
-          if (parsed.ok === true) loadFile(slot, parsed.path, parsed.name)
-          return
-        }
-        if (result.ok && result.data && result.data.canceled === true) return
+      // The hidden file input opens the OS dialog in both clients. Desktop can
+      // return a real path; the web client uploads the chosen bytes to the Host.
+      const chosen = await chooseLocalFile()
+      if (!chosen.ok) return
+      if (chosen.path !== '') {
+        loadFile(slot, chosen.path, chosen.name)
+        return
       }
+      dispatch({ type: ACT.NOTICE, notice: '正在把所选文件复制到本机临时目录…' })
+      const uploaded = await uploadFile(chosen.file)
+      if (uploaded.ok) {
+        loadFile(slot, uploaded.path, uploaded.name)
+        return
+      }
+      dispatch({ type: ACT.NOTICE, notice: uploaded.error.message })
       setDialogSlot(slot)
     }
 
