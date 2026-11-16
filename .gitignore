@@ -1,0 +1,11 @@
+node_modules/
+.tmp/
+.kumquat-tmp/
+fixtures/
+*.tgz
+*.log
+.env
+.env.*
+ffmpeg.exe
+ffprobe.exe
+.DS_Store

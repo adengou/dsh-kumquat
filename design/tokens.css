@@ -1,0 +1,60 @@
+:root {
+  /* typeface: system stack only — no bundled font files, no @font-face (see DECISIONS D9) */
+  --kq-font: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei UI",
+    "PingFang SC", "Noto Sans CJK SC", sans-serif;
+
+  /* surface */
+  --kq-bg: #131519;
+  --kq-card: #191c22;
+  --kq-raise: #1f242c;
+  --kq-line: #272c35;
+
+  /* text */
+  --kq-text: #e8eaf0;
+  --kq-muted: #9aa3b3;
+  --kq-dim: #697183;
+
+  /* accent: kumquat orange */
+  --kq-accent: #ff8a2b;
+  --kq-accent-weak: rgba(255, 138, 43, 0.14);
+
+  /* status */
+  --kq-ok: #3ddc97;
+  --kq-warn: #f5a524;
+  --kq-fail: #ff5f6d;
+
+  /* shape */
+  --kq-r-sm: 8px;
+  --kq-r-md: 12px;
+  --kq-r-lg: 16px;
+  --kq-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+
+  /* type */
+  --kq-fs-1: 11px;
+  --kq-fs-2: 12.5px;
+  --kq-fs-3: 14.5px;
+  --kq-fs-4: 18px;
+  --kq-lh: 1.65;
+
+  /* motion */
+  --kq-motion: 150ms ease-out;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --kq-bg: #f6f7f9;
+    --kq-card: #ffffff;
+    --kq-raise: #f1f3f6;
+    --kq-line: #e2e5ea;
+    --kq-text: #1b1f26;
+    --kq-muted: #5c6472;
+    --kq-dim: #8b93a1;
+    --kq-shadow: 0 18px 44px rgba(20, 24, 32, 0.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --kq-motion: 0ms linear;
+  }
+}

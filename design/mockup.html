@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Kumquat · 界面设计稿 v0.6（三个屏幕）</title>
+<style>
+  :root{
+    --bg:#131519; --card:#191c22; --raise:#1f242c; --line:#272c35;
+    --text:#e8eaf0; --muted:#9aa3b3; --dim:#697183;
+    --accent:#5aa9ff; --ok:#3ddc97; --warn:#f5a524; --fail:#ff5f6d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:14px/1.65 "Microsoft YaHei UI","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif}
+  .wrap{max-width:720px;margin:44px auto 80px;padding:0 20px}
+  .cap{color:var(--dim);font-size:12px;letter-spacing:.06em;margin:0 0 12px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+         box-shadow:0 24px 60px rgba(0,0,0,.45)}
+  .hd{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line)}
+  .mark{width:25px;height:25px;border-radius:8px;background:linear-gradient(135deg,#ffc46b,#ff8a2b);
+        color:#2a1400;
+        display:grid;place-items:center;color:#0b0d11;font-weight:700;font-size:13px}
+  .name{font-weight:600;font-size:14.5px}
+  .st{margin-left:auto;color:var(--dim);font-size:11.5px}
+  .back{background:none;border:0;color:var(--muted);font-size:15px;padding:0 4px;cursor:pointer;display:none}
+  .view{display:none;padding:22px 20px}
+  .view.on{display:block}
+
+  .q{color:var(--muted);font-size:13px;margin:2px 0 16px}
+  .card{display:flex;align-items:center;gap:14px;padding:16px 18px;margin-bottom:10px;
+        background:var(--raise);border:1px solid var(--line);border-radius:12px;cursor:pointer;
+        transition:border-color .15s,transform .15s}
+  .card:hover{border-color:#3a4658;transform:translateY(-1px)}
+  .card .t{font-size:14.5px;font-weight:600;margin-bottom:2px}
+  .card .d{color:var(--dim);font-size:12.5px}
+  .card .ar{margin-left:auto;color:var(--dim);font-size:16px}
+
+  .sec{margin-bottom:20px}
+  .lb{color:var(--dim);font-size:11.5px;letter-spacing:.06em;margin-bottom:9px}
+  .btns{display:flex;gap:8px;margin-bottom:10px}
+  button{font-family:inherit;font-size:12.5px;border-radius:8px;padding:7px 13px;cursor:pointer}
+  .pri{background:var(--accent);border:0;color:#08111c;font-weight:600}
+  .ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+  .file{display:flex;align-items:center;gap:12px;padding:11px 13px;background:var(--raise);
+        border:1px solid var(--line);border-radius:10px}
+  .fic{width:32px;height:32px;border-radius:8px;background:#252b36;display:grid;place-items:center}
+  .fn{font-size:13px}
+  .fs{color:var(--dim);font-size:11.5px;margin-top:1px}
+  .x{margin-left:auto;color:var(--dim);background:none;border:0;font-size:14px}
+
+  .grid{display:flex;gap:7px;flex-wrap:wrap}
+  .fmt{padding:5px 13px;border-radius:7px;background:var(--raise);border:1px solid var(--line);
+       color:var(--muted);font-size:12.5px;cursor:pointer}
+  .fmt.on{background:#16283c;border-color:#2f5f8e;color:#c7e2ff}
+  .note{color:var(--dim);font-size:11.5px;margin-top:9px}
+  .chk{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12.5px;margin-top:12px}
+  .box{width:13px;height:13px;border-radius:4px;border:1px solid #3a4152;display:grid;place-items:center;font-size:9px;color:#08111c}
+  .box.on{background:var(--ok);border-color:var(--ok)}
+
+  .ticks{display:flex;justify-content:space-between;color:var(--dim);font-size:10px;margin-top:5px}
+  .tl{position:relative;height:30px;border-radius:7px;background:#151920;border:1px solid var(--line);overflow:hidden}
+  .tl i{position:absolute;inset:0;background:repeating-linear-gradient(90deg,#212733 0 1px,transparent 1px 42px)}
+  .sel{position:absolute;top:0;bottom:0;left:26.7%;width:43.3%;
+       background:rgba(90,169,255,.18);border-left:2px solid var(--accent);border-right:2px solid var(--accent)}
+  .h{position:absolute;top:-3px;bottom:-3px;width:10px;border-radius:4px;background:var(--accent)}
+  .h.l{left:calc(26.7% - 5px)} .h.r{left:calc(70% - 5px)}
+  .fields{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:13px;
+          font-size:12.5px;color:var(--muted)}
+  .inp{background:var(--raise);border:1px solid var(--line);border-radius:7px;padding:5px 9px;color:var(--text);font-size:12.5px}
+  .go{display:flex;align-items:center;gap:12px;margin-top:4px}
+  .go .big{padding:10px 26px;font-size:13.5px}
+  .eta{color:var(--dim);font-size:11.5px}
+
+  .res{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);display:none}
+  .res.on{display:block}
+  .r{display:grid;grid-template-columns:16px 1fr 150px 46px;gap:8px;align-items:center;
+     padding:9px 0;font-size:12.5px;border-bottom:1px dashed #222831}
+  .r:last-child{border-bottom:0}
+  .r .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .r .nm small{display:block;color:var(--dim);font-size:11px}
+  .r .m{color:var(--muted);font-size:11.5px}
+  .r .act{color:var(--accent);font-size:11.5px;text-align:right}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .fail{color:var(--fail)}
+
+  .hint{color:var(--dim);font-size:11.5px;margin-top:6px}
+  .foot{color:var(--dim);font-size:11px;padding:0 20px 16px}
+  .tip{color:var(--dim);font-size:12px;text-align:center;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="cap">DSH 插件界面设计稿 v0.6　·　Kumquat　·　可点击</p>
+
+  <div class="panel">
+    <div class="hd">
+      <button class="back" id="back" onclick="home()">←</button>
+      <div class="mark">K</div>
+      <div class="name" id="title">Kumquat</div>
+      <div style="color:var(--dim);font-size:11.5px">金桔</div>
+      <div class="st">ffmpeg 6.1.1 · 就绪</div>
+    </div>
+
+    <!-- 屏幕 1：选任务 -->
+    <div class="view on" id="v-home">
+      <p class="q">要做什么？</p>
+
+      <div class="card" onclick="go('convert')">
+        <div>
+          <div class="t">格式转换</div>
+          <div class="d">换个容器，或把视频里的声音抽出来</div>
+        </div>
+        <div class="ar">›</div>
+      </div>
+
+      <div class="card" onclick="go('gif')">
+        <div>
+          <div class="t">视频做 GIF</div>
+          <div class="d">取几秒，做成循环动图</div>
+        </div>
+        <div class="ar">›</div>
+      </div>
+
+      <p class="note">最近：猫猫打滚.mkv · 猫猫_03.2-08.4.gif</p>
+    </div>
+
+    <!-- 屏幕 2A：格式转换 -->
+    <div class="view" id="v-convert">
+      <div class="sec">
+        <div class="lb">文件</div>
+        <div class="btns"><button class="pri">＋ 添加文件</button><button class="ghost">粘贴路径</button></div>
+        <div class="file">
+          <div class="fic">🎬</div>
+          <div>
+            <div class="fn">猫猫打滚.mp4</div>
+            <div class="fs">1920×1080 · 0:12 · 18 MB</div>
+          </div>
+          <button class="x">✕</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="lb">转成</div>
+        <div class="grid">
+          <span class="fmt">MP4</span><span class="fmt">MKV</span><span class="fmt">MOV</span>
+          <span class="fmt">WEBM</span><span class="fmt">AVI</span><span class="fmt">MP3</span>
+          <span class="fmt">M4A</span><span class="fmt">WAV</span><span class="fmt">FLAC</span>
+        </div>
+        <div class="chk"><span class="box on">✓</span>仅换封装 · 3 秒 · 不重编码</div>
+        <div class="note">想只要声音，直接选 MP3。</div>
+      </div>
+
+      <div class="go">
+        <button class="pri big" onclick="done('convert')">开始转换</button>
+        <span class="eta">预计 3 秒 · 输出到 下载/Kumquat</span>
+      </div>
+
+      <div class="res" id="res-convert">
+        <div class="r"><span class="ok">✓</span>
+          <div class="nm">猫猫打滚.mkv<small>1080p · 0:12 · 17.6 MB</small></div>
+          <span class="m">规格全部命中</span><span class="act">打开</span></div>
+      </div>
+    </div>
+
+    <!-- 屏幕 2B：视频做 GIF -->
+    <div class="view" id="v-gif">
+      <div class="sec">
+        <div class="lb">文件</div>
+        <div class="file">
+          <div class="fic">🎬</div>
+          <div>
+            <div class="fn">猫猫打滚.mp4</div>
+            <div class="fs">1920×1080 · 0:12 · 18 MB</div>
+          </div>
+          <button class="x">✕</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="lb">截取</div>
+        <div class="tl"><i></i><div class="sel"></div><div class="h l"></div><div class="h r"></div></div>
+        <div class="ticks"><span>00:00</span><span>00:03.2</span><span>00:08.4</span><span>00:12</span></div>
+        <div class="fields">
+          <span>起 <span class="inp">00:03.2</span></span>
+          <span>止 <span class="inp">00:08.4</span></span>
+          <span>时长 <b style="color:var(--text)">5.2s</b></span>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="fields" style="margin-top:0">
+          <span>帧率 <span class="inp">12</span></span>
+          <span>宽度 <span class="inp">480</span></span>
+          <span>目标 <span class="inp">8 MB</span></span>
+        </div>
+        <div class="note">GIF 不含声音；5.2 秒约 6.3 MB。</div>
+      </div>
+
+      <div class="go">
+        <button class="pri big" onclick="done('gif')">开始生成 GIF</button>
+        <span class="eta">预计 7 秒</span>
+      </div>
+
+      <div class="res" id="res-gif">
+        <div class="r"><span class="ok">✓</span>
+          <div class="nm">猫猫打滚_03.2-08.4.gif<small>480×270 · 5.2s · 62 帧 · 6.3 MB</small></div>
+          <span class="m">在 8 MB 以内</span><span class="act">打开</span></div>
+        <div class="hint">验收：时长与选区一致 ±0.2s、帧数 62、循环无限。</div>
+      </div>
+    </div>
+
+    <div class="foot">文件以本机路径登记，不上传、不复制；每次任务自动验收并留证据。</div>
+  </div>
+
+  <p class="tip">点击卡片进入任务，点“开始”看结果；← 返回。</p>
+</div>
+
+<script>
+function go(v){
+  document.querySelectorAll('.view').forEach(function(e){e.classList.remove('on')});
+  document.getElementById('v-' + v).classList.add('on');
+  document.getElementById('back').style.display = 'block';
+  document.getElementById('title').textContent = v === 'convert' ? '格式转换' : '视频做 GIF';
+}
+function home(){
+  document.querySelectorAll('.view').forEach(function(e){e.classList.remove('on')});
+  document.getElementById('v-home').classList.add('on');
+  document.getElementById('back').style.display = 'none';
+  document.getElementById('title').textContent = 'Kumquat';
+}
+function done(v){
+  document.getElementById('res-' + v).classList.add('on');
+}
+</script>
+</body>
+</html>

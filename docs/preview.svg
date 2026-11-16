@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="300" viewBox="0 0 640 300" role="img" aria-label="A video frame with a selected segment becomes a looping GIF, and the result carries a verification badge">
+  <rect x="24" y="24" width="592" height="252" rx="20" fill="#1f2229"/>
+
+  <rect x="64" y="76" width="200" height="148" rx="12" fill="#2c3038" stroke="#3a3f4a" stroke-width="2"/>
+  <path d="M150 126l40 24-40 24z" fill="#ff8a2b"/>
+  <rect x="84" y="188" width="160" height="8" rx="4" fill="#3a3f4a"/>
+  <rect x="112" y="188" width="72" height="8" rx="4" fill="#ffc46b"/>
+  <circle cx="112" cy="192" r="7" fill="#f4f5f7"/>
+  <circle cx="184" cy="192" r="7" fill="#f4f5f7"/>
+
+  <path d="M286 150h30" stroke="#8b93a1" stroke-width="6" stroke-linecap="round"/>
+  <path d="M316 136l18 14-18 14z" fill="#8b93a1"/>
+
+  <rect x="356" y="76" width="220" height="148" rx="12" fill="#2c3038" stroke="#3a3f4a" stroke-width="2"/>
+  <rect x="378" y="98" width="176" height="30" rx="6" fill="#3a3f4a"/>
+  <rect x="378" y="136" width="176" height="30" rx="6" fill="#ff8a2b"/>
+  <rect x="378" y="174" width="176" height="30" rx="6" fill="#3a3f4a"/>
+  <rect x="390" y="108" width="24" height="10" rx="5" fill="#1f2229"/>
+  <rect x="390" y="146" width="24" height="10" rx="5" fill="#fff4e2"/>
+  <rect x="390" y="184" width="24" height="10" rx="5" fill="#1f2229"/>
+
+  <path d="M470 60c26 0 46 16 46 36" stroke="#ffc46b" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M508 88l8 14-16-2z" fill="#ffc46b"/>
+
+  <circle cx="556" cy="228" r="24" fill="#3ddc97"/>
+  <path d="M544 228l8 9 16-18" stroke="#1f2229" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

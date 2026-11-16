@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>片检 · 界面设计稿 v0.1</title>
+<style>
+  :root{
+    --bg:#14161b; --panel:#1b1e25; --panel2:#20242d; --line:#2b303b;
+    --text:#e7e9ef; --muted:#98a1b2; --dim:#6b7385;
+    --ok:#3ddc97; --warn:#f5a524; --fail:#ff5f6d; --run:#5aa9ff;
+    --chip:#262b36;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:14px/1.55 "Microsoft YaHei UI","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif}
+  .frame{max-width:1180px;margin:32px auto 64px;padding:0 20px}
+  .tagline{color:var(--dim);font-size:12px;letter-spacing:.08em;margin:0 0 10px}
+  .app{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+       box-shadow:0 24px 60px rgba(0,0,0,.45)}
+  header{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#3ddc97,#2b7cff);
+        display:grid;place-items:center;font-weight:700;color:#0b0d11;font-size:15px}
+  .title{font-size:16px;font-weight:600;letter-spacing:.02em}
+  .slogan{color:var(--dim);font-size:12px;margin-left:-6px}
+  .spacer{flex:1}
+  .status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(61,220,151,.15)}
+  .banner{display:flex;align-items:center;gap:10px;padding:10px 20px;background:#2a2216;
+          border-bottom:1px solid #4a3a1c;color:#f0c986;font-size:12.5px}
+  .banner b{color:#ffd79a;font-weight:600}
+  .banner a{color:#ffd79a;text-decoration:underline;text-underline-offset:3px}
+  .body{display:grid;grid-template-columns:1fr;gap:0}
+  .body.has-drawer{grid-template-columns:1fr 400px}
+  .main{padding:18px 20px 22px;min-width:0}
+  .drop{border:1.5px dashed #3a4152;border-radius:12px;padding:22px;text-align:center;
+        color:var(--muted);background:var(--panel2)}
+  .drop b{color:var(--text);font-weight:600}
+  .drop span{color:var(--dim)}
+  .recipes{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 14px}
+  .recipes .lab{color:var(--dim);font-size:12px;margin-right:2px}
+  .chip{padding:6px 12px;border-radius:999px;background:var(--chip);border:1px solid var(--line);
+        color:var(--text);font-size:12.5px}
+  .chip.on{background:#1d3a2e;border-color:#2f6b52;color:#9ff0c9}
+  .chip.off{color:#5b6273;text-decoration:line-through;background:#1a1d23}
+  .qhead{display:flex;align-items:center;margin:0 0 8px;color:var(--dim);font-size:12px}
+  .qhead .act{margin-left:auto;display:flex;gap:14px}
+  .qhead .act span{color:var(--muted)}
+  .rows{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .row{display:grid;grid-template-columns:26px 1.7fr 1fr 1.15fr 1.15fr 88px;gap:10px;align-items:center;
+       padding:11px 14px;border-bottom:1px solid var(--line);background:var(--panel2);font-size:12.8px}
+  .row:last-child{border-bottom:0}
+  .row.sel{background:#1d2633;box-shadow:inset 3px 0 0 var(--run)}
+  .ic{font-weight:700}
+  .ic.ok{color:var(--ok)} .ic.warn{color:var(--warn)} .ic.fail{color:var(--fail)} .ic.run{color:var(--run)}
+  .name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .name small{display:block;color:var(--dim);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m{color:var(--muted);font-size:12.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .badge{justify-self:end;padding:2px 9px;border-radius:999px;font-size:11.5px;white-space:nowrap}
+  .badge.ok{background:rgba(61,220,151,.12);color:var(--ok)}
+  .badge.warn{background:rgba(245,165,36,.13);color:var(--warn)}
+  .badge.fail{background:rgba(255,95,109,.13);color:var(--fail)}
+  .badge.run{background:rgba(90,169,255,.13);color:var(--run)}
+  .bar{height:4px;border-radius:3px;background:#2b303b;overflow:hidden;margin-top:5px}
+  .bar i{display:block;height:100%;width:62%;background:linear-gradient(90deg,#2b7cff,#5aa9ff)}
+  .drawer{border-left:1px solid var(--line);background:var(--panel2);padding:18px 18px 22px;min-width:0}
+  .dhead{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+  .dhead h3{font-size:14px;margin:0;font-weight:600}
+  .dhead span{color:var(--dim);font-size:11.5px}
+  .verdict{display:flex;align-items:center;gap:10px;margin:14px 0 16px}
+  .vtag{font-weight:600;color:var(--fail)}
+  .vsub{color:var(--dim);font-size:12px}
+  .btn{margin-left:auto;background:#2b7cff;color:#fff;border:0;border-radius:8px;
+       padding:7px 12px;font-size:12.5px;font-family:inherit}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);margin-left:8px}
+  .checks{display:flex;flex-direction:column;gap:2px}
+  .ck{display:grid;grid-template-columns:16px 74px 1fr;gap:8px;padding:8px 0;border-bottom:1px dashed #262b36;font-size:12.5px}
+  .ck:last-child{border-bottom:0}
+  .ck .k{color:var(--muted)}
+  .ck .v{color:var(--text)}
+  .ck .v em{font-style:normal;color:var(--dim);font-size:11.5px;display:block;margin-top:2px}
+  .ck.fail .v{color:#ffb3b8}
+  .hint{margin-top:10px;padding:9px 11px;border-radius:9px;background:#20262f;border:1px solid #2f3744;
+        color:#b9c4d6;font-size:12px}
+  .hint b{color:#dce6f5;font-weight:600}
+  .cmd{margin-top:12px;background:#12151a;border:1px solid #262b36;border-radius:9px;padding:10px 11px;
+       font:11.5px/1.6 ui-monospace,Consolas,monospace;color:#9fb0c8;white-space:pre-wrap;word-break:break-all}
+  .foot{display:flex;gap:8px;margin-top:14px}
+  .legend{margin-top:18px;display:flex;gap:18px;color:var(--dim);font-size:12px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+  .switch{display:flex;gap:8px;margin:26px 0 0}
+  .switch button{background:var(--panel);border:1px solid var(--line);color:var(--muted);
+                 padding:7px 14px;border-radius:8px;font-family:inherit;font-size:12.5px}
+  .switch button.on{color:var(--text);border-color:#3a4a63;background:#1d2633}
+  .note{color:var(--dim);font-size:12px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="frame">
+  <p class="tagline">DSH 插件界面设计稿 v0.1　·　非实现，仅用于评审</p>
+
+  <div class="app">
+    <header>
+      <div class="logo">检</div>
+      <div class="title">片检</div>
+      <div class="slogan">一条过</div>
+      <div class="spacer"></div>
+      <div class="status"><span class="dot"></span>ffmpeg 6.1.1 · 就绪</div>
+    </header>
+
+    <div class="banner">
+      <span>⚠</span>
+      <div><b>未检测到 libass</b>，字幕烧录配方不可用。其余配方正常。<a href="#">查看安装指令</a></div>
+    </div>
+
+    <div class="body" id="body">
+      <div class="main">
+        <div class="drop">
+          <b>拖入文件</b>，或点击选择　<span>·</span>　从路径添加　<span>·</span>　支持 mp4 / mov / mkv / wav / mp3
+        </div>
+
+        <div class="recipes">
+          <span class="lab">配方</span>
+          <span class="chip on">竖屏口播</span>
+          <span class="chip">课程录屏</span>
+          <span class="chip">播客</span>
+          <span class="chip">压缩到 100 MB</span>
+          <span class="chip off">字幕烧录</span>
+          <span class="chip">自定义…</span>
+        </div>
+
+        <div class="qhead">
+          <span>队列 · 5</span>
+          <span class="act"><span>全部取消</span><span>清空</span></span>
+        </div>
+
+        <div class="rows">
+          <div class="row">
+            <span class="ic ok">✓</span>
+            <div class="name">鲸鱼娘图鉴_49帧_1080p.mp4<small>C:\Users\Lenovo\Desktop\deepseek harness皮肤</small></div>
+            <span class="m">竖屏口播</span>
+            <span class="m">1080×1920</span>
+            <span class="m">−16.0 LUFS</span>
+            <span class="badge ok">通过</span>
+          </div>
+          <div class="row">
+            <span class="ic ok">✓</span>
+            <div class="name">肥鲸朗读-20261113-1240.mp3<small>C:\Users\Lenovo\Desktop\TTS</small></div>
+            <span class="m">播客</span>
+            <span class="m">22.05 kHz 单声道</span>
+            <span class="m">−16.5 LUFS</span>
+            <span class="badge ok">通过</span>
+          </div>
+          <div class="row">
+            <span class="ic warn">⚠</span>
+            <div class="name">课程录屏 03.mp4<small>C:\Users\Lenovo\Videos</small></div>
+            <span class="m">压缩到 100 MB</span>
+            <span class="m">104 MB</span>
+            <span class="m">超 4 MB</span>
+            <span class="badge warn">可修复</span>
+          </div>
+          <div class="row sel">
+            <span class="ic run">●</span>
+            <div class="name">素材A.mp4<small>正在验收 · 用时 4.2s</small><div class="bar"><i></i></div></div>
+            <span class="m">竖屏口播</span>
+            <span class="m">1080×1920</span>
+            <span class="m">62%</span>
+            <span class="badge run">验收中</span>
+          </div>
+          <div class="row">
+            <span class="ic fail">✗</span>
+            <div class="name">坏素材.mp4<small>C:\Users\Lenovo\Downloads</small></div>
+            <span class="m">竖屏口播</span>
+            <span class="m">容器标 640×360</span>
+            <span class="m">与配方不符</span>
+            <span class="badge fail">不合格</span>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span><i style="background:var(--ok)"></i>通过：规格全部命中</span>
+          <span><i style="background:var(--warn)"></i>可修复：一键修完自动复验</span>
+          <span><i style="background:var(--fail)"></i>不合格：附原因与下一步</span>
+        </div>
+      </div>
+
+      <aside class="drawer" id="drawer">
+        <div class="dhead"><h3>素材A.mp4</h3><span>竖屏口播 · 1080×1920 · 14.0s</span></div>
+
+        <div class="verdict">
+          <span class="vtag">不合格</span>
+          <span class="vsub">1 项未通过，可自动修复</span>
+          <button class="btn">修复并重验</button>
+        </div>
+
+        <div class="checks">
+          <div class="ck"><span class="ic ok">✓</span><span class="k">分辨率</span><span class="v">1080×1920<em>期望 1080×1920</em></span></div>
+          <div class="ck"><span class="ic ok">✓</span><span class="k">时长</span><span class="v">13.99s<em>期望 14.0 ± 0.2s</em></span></div>
+          <div class="ck fail"><span class="ic fail">✗</span><span class="k">响度</span><span class="v">−13.5 LUFS，高 2.5<em>期望 −16 ± 1 LUFS</em></span></div>
+          <div class="ck"><span class="ic ok">✓</span><span class="k">真峰值</span><span class="v">−1.5 dBTP<em>上限 −1.0 dBTP</em></span></div>
+          <div class="ck"><span class="ic ok">✓</span><span class="k">可解码</span><span class="v">抽查首/中/尾共 12s，无错误<em>L1 抽样档</em></span></div>
+        </div>
+
+        <div class="hint">
+          <b>下一步：</b>降 2.5 dB，只重编音频，视频直接复制。预计 1.8 秒，不会重新编码画面。
+        </div>
+
+        <div class="cmd">ffmpeg -y -i 素材A.mp4 -c:v copy -af volume=-2.5dB -c:a aac -b:a 128k 素材A.qc.mp4</div>
+
+        <div class="foot">
+          <button class="btn ghost">打开目录</button>
+          <button class="btn ghost">复制命令</button>
+          <button class="btn ghost">查看证据</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="switch">
+    <button id="b1" class="on" onclick="toggle(1)">队列 + 详情</button>
+    <button id="b2" onclick="toggle(0)">仅队列</button>
+  </div>
+  <p class="note">说明：本稿只表达信息层级与交互，颜色与字号最终以 DSH 主题变量为准。</p>
+</div>
+
+<script>
+function toggle(open){
+  var body = document.getElementById('body');
+  var d = document.getElementById('drawer');
+  var b1 = document.getElementById('b1'), b2 = document.getElementById('b2');
+  if(open){ body.classList.add('has-drawer'); d.style.display='block'; b1.classList.add('on'); b2.classList.remove('on'); }
+  else { body.classList.remove('has-drawer'); d.style.display='none'; b2.classList.add('on'); b1.classList.remove('on'); }
+}
+toggle(1);
+</script>
+</body>
+</html>

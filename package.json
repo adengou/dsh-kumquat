@@ -1,0 +1,67 @@
+{
+  "name": "dsh-kumquat",
+  "version": "0.0.14",
+  "type": "module",
+  "description": "DSH plugin: format conversion and video-to-GIF, with built-in verification.",
+  "license": "MIT",
+  "author": "adengou",
+  "homepage": "https://gitee.com/adengou/dsh-kumquat",
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/adengou/dsh-kumquat.git"
+  },
+  "bugs": {
+    "url": "https://gitee.com/adengou/dsh-kumquat/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "ffmpeg",
+    "gif",
+    "video-converter"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "src",
+    "locale",
+    "docs",
+    "icon.svg",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "SECURITY.md"
+  ],
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "test": "node --test --test-isolation=none \"test/unit/*.test.mjs\"",
+    "test:unit": "node --test --test-isolation=none \"test/unit/*.test.mjs\"",
+    "test:e2e": "node --test --test-isolation=none \"test/e2e/*.test.mjs\"",
+    "check:deps": "node scripts/check-deps.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-api-remotes",
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-sidebar-right"
+      ]
+    }
+  }
+}
