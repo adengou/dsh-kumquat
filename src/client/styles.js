@@ -126,6 +126,11 @@ export const CSS_TEXT = `
 .kq-fs__title{font-size:var(--kq-fs-3);font-weight:600}
 .kq-fs__tag{color:var(--kq-dim);font-size:var(--kq-fs-1)}
 .kq-fs__path{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--kq-line)}
+.kq-fs__places{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 16px;
+  border-bottom:1px solid var(--kq-line)}
+.kq-fs__chip{background:var(--kq-raise);border:1px solid var(--kq-line);border-radius:999px;
+  padding:3px 10px;color:var(--kq-text);font:inherit;font-size:var(--kq-fs-1);cursor:pointer}
+.kq-fs__chip:hover{border-color:var(--kq-accent-line)}
 .kq-fs__list{flex:1;min-height:280px;overflow:auto;padding:6px}
 .kq-fs__row{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;
   background:none;border:0;border-radius:var(--kq-r-sm);color:var(--kq-text);

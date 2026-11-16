@@ -23,6 +23,8 @@ test('目录列表：目录在前、文件在后，返回绝对路径', async ()
     assert.equal(listing.entries[1].type, 'file')
     assert.equal(listing.parent, path.dirname(path.resolve(dir)))
     assert.equal(listing.truncated, false)
+    assert.ok(Array.isArray(listing.roots) && listing.roots.length > 0, '必须返回可切换的根目录')
+    assert.ok(Array.isArray(listing.quick), '必须返回常用位置')
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

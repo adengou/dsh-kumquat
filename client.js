@@ -2718,6 +2718,11 @@ const CSS_TEXT = `
 .kq-fs__title{font-size:var(--kq-fs-3);font-weight:600}
 .kq-fs__tag{color:var(--kq-dim);font-size:var(--kq-fs-1)}
 .kq-fs__path{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--kq-line)}
+.kq-fs__places{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 16px;
+  border-bottom:1px solid var(--kq-line)}
+.kq-fs__chip{background:var(--kq-raise);border:1px solid var(--kq-line);border-radius:999px;
+  padding:3px 10px;color:var(--kq-text);font:inherit;font-size:var(--kq-fs-1);cursor:pointer}
+.kq-fs__chip:hover{border-color:var(--kq-accent-line)}
 .kq-fs__list{flex:1;min-height:280px;overflow:auto;padding:6px}
 .kq-fs__row{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;
   background:none;border:0;border-radius:var(--kq-r-sm);color:var(--kq-text);
@@ -3209,7 +3214,17 @@ function FileDialog({ React, api, slot, onClose, onChoose }) {
   }, [])
 
   const entries = listing && Array.isArray(listing.entries) ? listing.entries : []
+  const roots = listing && Array.isArray(listing.roots) ? listing.roots : []
+  const quick = listing && Array.isArray(listing.quick) ? listing.quick : []
   const parent = listing && typeof listing.parent === 'string' ? listing.parent : ''
+
+  const chip = (item) => h('button', {
+    key: item.path,
+    type: 'button',
+    className: 'kq-fs__chip',
+    title: item.path,
+    onClick: () => { void load(item.path) },
+  }, item.name)
 
   return h('div', {
     className: 'kq-veil',
@@ -3226,6 +3241,11 @@ function FileDialog({ React, api, slot, onClose, onChoose }) {
       h('span', { className: 'kq-fs__tag' }, slot === 'gif' ? '选一段视频' : '选视频或音频'),
       h('span', { style: { flex: 1 } }),
       h(GhostButton, { label: '取消', onClick: onClose })),
+    h('div', { className: 'kq-fs__places' },
+      h('span', { className: 'kq-fs__tag' }, '位置'),
+      quick.map(chip),
+      roots.length > 0 ? h('span', { className: 'kq-fs__tag' }, '磁盘') : null,
+      roots.map(chip)),
     h('div', { className: 'kq-fs__path' },
       h(GhostButton, {
         label: '上一级',
