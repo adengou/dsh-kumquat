@@ -22,15 +22,15 @@ import {
   targetOf,
 } from '../../src/client/format.js'
 
-test('format: 九种目标格式顺序与产品规格一致', () => {
+test('format: 十三种目标格式顺序与产品规格一致', () => {
   assert.deepEqual(CONVERT_TARGETS.map((target) => target.ext), [
-    'mp4', 'mkv', 'mov', 'webm', 'avi', 'mp3', 'm4a', 'wav', 'flac',
+    'mp4', 'mkv', 'mov', 'webm', 'avi', 'mp3', 'm4a', 'wav', 'flac', 'aac', 'ogg', 'opus', 'wma',
   ])
   assert.deepEqual(CONVERT_TARGETS.map((target) => target.label), [
-    'MP4', 'MKV', 'MOV', 'WEBM', 'AVI', 'MP3', 'M4A', 'WAV', 'FLAC',
+    'MP4', 'MKV', 'MOV', 'WEBM', 'AVI', 'MP3', 'M4A', 'WAV', 'FLAC', 'AAC', 'OGG', 'OPUS', 'WMA',
   ])
   assert.deepEqual(VIDEO_EXTS, ['mp4', 'mkv', 'mov', 'webm', 'avi'])
-  assert.deepEqual(AUDIO_EXTS, ['mp3', 'm4a', 'wav', 'flac'])
+  assert.deepEqual(AUDIO_EXTS, ['mp3', 'm4a', 'wav', 'flac', 'aac', 'ogg', 'opus', 'wma'])
 })
 
 test('format: 每个目标都有容器与一句说明', () => {
@@ -38,7 +38,7 @@ test('format: 每个目标都有容器与一句说明', () => {
     assert.equal(typeof target.container, 'string')
     assert.ok(target.container.length > 0)
     assert.ok(target.note.length > 0)
-    assert.equal(target.kind, ['mp3', 'm4a', 'wav', 'flac'].includes(target.ext) ? 'audio' : 'video')
+    assert.equal(target.kind, AUDIO_EXTS.includes(target.ext) ? 'audio' : 'video')
   }
 })
 

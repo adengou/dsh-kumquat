@@ -45,7 +45,7 @@ export function GifScreen(props) {
     h(Section, { label: '参数' },
       h(GifFields, { fields: model.fields, onChange: props.onField })),
     h(Section, { label: '输出' },
-      h(OutputPicker, { dir: props.outputDir, onChoose: props.onChooseOutput })),
+      h(OutputPicker, { dir: props.outputPath || props.outputDir, onChoose: props.onChooseOutput })),
     h('p', { className: 'kq-note kq-note--line' }, model.note),
     model.warnings.map((warning) => h('p', { key: warning, className: 'kq-hint' }, warning)),
     model.error
@@ -62,5 +62,6 @@ export function GifScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
 
 

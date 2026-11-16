@@ -19,6 +19,10 @@ export const CONVERT_TARGETS = Object.freeze([
   Object.freeze({ ext: 'm4a', label: 'M4A', kind: 'audio', container: 'ipod', note: 'AAC 音频' }),
   Object.freeze({ ext: 'wav', label: 'WAV', kind: 'audio', container: 'wav', note: '无损；体积大' }),
   Object.freeze({ ext: 'flac', label: 'FLAC', kind: 'audio', container: 'flac', note: '无损；有压缩' }),
+  Object.freeze({ ext: 'aac', label: 'AAC', kind: 'audio', container: 'adts', note: '苹果/安卓通用' }),
+  Object.freeze({ ext: 'ogg', label: 'OGG', kind: 'audio', container: 'ogg', note: '开源；Vorbis' }),
+  Object.freeze({ ext: 'opus', label: 'OPUS', kind: 'audio', container: 'opus', note: '语音/音乐都省体积' }),
+  Object.freeze({ ext: 'wma', label: 'WMA', kind: 'audio', container: 'asf', note: '旧播放器兼容' }),
 ])
 
 /** 目标格式按扩展名查表。 @type {Readonly<Record<string, ConvertTarget>>} */
@@ -49,7 +53,7 @@ export const GIF_FPS_OPTIONS = Object.freeze([8, 10, 12, 15, 20, 24])
 export const GIF_WIDTH_OPTIONS = Object.freeze([320, 480, 640, 720, 820])
 
 /** 每个音频目标要求的编码：'pcm' 表示任意 PCM 均可。 */
-export const AUDIO_TARGET_CODEC = Object.freeze({ mp3: 'mp3', m4a: 'aac', wav: 'pcm', flac: 'flac' })
+export const AUDIO_TARGET_CODEC = Object.freeze({ mp3: 'mp3', m4a: 'aac', wav: 'pcm', flac: 'flac', aac: 'aac', ogg: 'vorbis', opus: 'opus', wma: 'wmav2' })
 
 /** 允许流拷贝进各视频容器的视频编码；'*' 表示容器不挑。 */
 export const COPY_VIDEO_CODECS = Object.freeze({
@@ -80,6 +84,10 @@ export const MUXER_ALIASES = Object.freeze({
   m4a: Object.freeze(['ipod', 'mp4', 'm4a']),
   wav: Object.freeze(['wav']),
   flac: Object.freeze(['flac']),
+  aac: Object.freeze(['adts', 'aac']),
+  ogg: Object.freeze(['ogg']),
+  opus: Object.freeze(['opus']),
+  wma: Object.freeze(['asf', 'wma']),
 })
 
 /** 编码的人类可读名。 */
@@ -102,6 +110,7 @@ export const CODEC_LABELS = Object.freeze({
   opus: 'Opus',
   vorbis: 'Vorbis',
   flac: 'FLAC',
+  wmav2: 'WMA',
 })
 
 /**

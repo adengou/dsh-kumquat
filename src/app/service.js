@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Application service: wires engine + verifier into the public contract.
  * Parallelism is delegated to the scheduler (between jobs, never inside one).
  */
@@ -248,7 +248,7 @@ export function createService(options = {}) {
     }
   }
 
-  async function runTask(jobId, task, signal, preferredDir) {
+  async function runTask(jobId, task, signal, preferredDir, exactPath) {
     try {
       await fs.access(task.input)
     } catch {
@@ -257,21 +257,31 @@ export function createService(options = {}) {
       err.handled = true
       throw err
     }
-    const chosen = await pickOutputDir(task, preferredDir)
-    const outputDir = chosen.dir
-    const targetDir = chosen.targetDir || chosen.dir
-    if (chosen.note !== null) {
-      const jobRecord = jobs.get(jobId)
-      if (jobRecord) {
-        jobRecord.summary.note = chosen.note
-        jobRecord.detail.note = chosen.note
+    let outputDir
+    let targetDir
+    let finalPath
+    if (typeof exactPath === 'string' && exactPath !== '') {
+      outputDir = path.dirname(exactPath)
+      targetDir = outputDir
+      await fs.mkdir(outputDir, { recursive: true })
+      finalPath = exactPath
+    } else {
+      const chosen = await pickOutputDir(task, preferredDir)
+      outputDir = chosen.dir
+      targetDir = chosen.targetDir || chosen.dir
+      if (chosen.note !== null) {
+        const jobRecord = jobs.get(jobId)
+        if (jobRecord) {
+          jobRecord.summary.note = chosen.note
+          jobRecord.detail.note = chosen.note
+        }
       }
+      await fs.mkdir(outputDir, { recursive: true })
+      await fs.mkdir(targetDir, { recursive: true }).catch(() => {})
+      finalPath = await uniquePath(targetDir, `${path.basename(task.input, path.extname(task.input))}${task.kind === 'gif' ? '.gif' : '.' + String(task.to).replace(/^\./, '').toLowerCase()}`)
     }
-    await fs.mkdir(outputDir, { recursive: true })
-    await fs.mkdir(targetDir, { recursive: true }).catch(() => {})
-    const ext = task.kind === 'gif' ? '.gif' : `.${String(task.to).replace(/^\./, '').toLowerCase()}`
+    const ext = task.kind === 'gif' ? '.gif' : '.' + String(task.to).replace(/^\./, '').toLowerCase()
     const stem = path.basename(task.input, path.extname(task.input))
-    let finalPath = await uniquePath(targetDir, `${stem}${ext}`)
     // Temporary files live in a private subfolder so a killed encoder cannot
     // leave a stray ".part" next to the user's files. Same volume, atomic rename.
     const partDir = path.join(outputDir, '.kumquat-tmp')
@@ -392,7 +402,7 @@ export function createService(options = {}) {
       id,
       run: async (signal) => {
         summary.status = 'running'
-        const result = await runTask(id, task, signal, opts.outputDir)
+        const result = await runTask(id, task, signal, opts.outputDir, opts.outputPath)
         summary.status = result.ok ? 'done' : 'failed'
         return result
       },
@@ -477,6 +487,8 @@ export function createService(options = {}) {
 }
 
 export { estimateGifBytes }
+
+
 
 
 

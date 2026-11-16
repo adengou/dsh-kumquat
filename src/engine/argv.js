@@ -88,6 +88,38 @@ const TARGETS = Object.freeze({
     audio: ['pcm_s16le', 'pcm_s24le', 'pcm_s32le', 'pcm_f32le', 'pcm_u8'],
     subtitles: [],
   },
+  aac: {
+    container: 'adts',
+    muxer: 'adts',
+    kind: 'audio',
+    video: [],
+    audio: ['aac'],
+    subtitles: [],
+  },
+  ogg: {
+    container: 'ogg',
+    muxer: 'ogg',
+    kind: 'audio',
+    video: [],
+    audio: ['vorbis', 'opus'],
+    subtitles: [],
+  },
+  opus: {
+    container: 'opus',
+    muxer: 'opus',
+    kind: 'audio',
+    video: [],
+    audio: ['opus'],
+    subtitles: [],
+  },
+  wma: {
+    container: 'wma',
+    muxer: 'asf',
+    kind: 'audio',
+    video: [],
+    audio: ['wmav2'],
+    subtitles: [],
+  },
   flac: {
     container: 'flac',
     muxer: 'flac',
@@ -111,6 +143,10 @@ const ALIASES = Object.freeze({
   m4a: 'm4a',
   wav: 'wav',
   flac: 'flac',
+  aac: 'aac',
+  ogg: 'ogg',
+  opus: 'opus',
+  wma: 'wma',
 })
 
 /** Preferred encoders, first available wins. */
@@ -153,6 +189,11 @@ const AUDIO_ENCODERS = {
   m4a: [{ codec: 'aac', encoder: 'aac', args: ['-c:a', 'aac', '-b:a', '192k'] }],
   wav: [{ codec: 'pcm_s16le', encoder: 'pcm_s16le', args: ['-c:a', 'pcm_s16le'] }],
   flac: [{ codec: 'flac', encoder: 'flac', args: ['-c:a', 'flac'] }],
+  aac: [{ codec: 'aac', encoder: 'aac', args: ['-c:a', 'aac', '-b:a', '192k'] }],
+  adts: [{ codec: 'aac', encoder: 'aac', args: ['-c:a', 'aac', '-b:a', '192k'] }],
+  ogg: [{ codec: 'vorbis', encoder: 'libvorbis', args: ['-c:a', 'libvorbis', '-q:a', '5'] }],
+  opus: [{ codec: 'opus', encoder: 'libopus', args: ['-c:a', 'libopus', '-b:a', '128k'] }],
+  wma: [{ codec: 'wmav2', encoder: 'wmav2', args: ['-c:a', 'wmav2', '-b:a', '192k'] }],
 }
 
 /**

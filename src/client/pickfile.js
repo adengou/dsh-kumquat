@@ -33,7 +33,7 @@ export function chooseLocalFile() {
     }
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = 'video/*,audio/*,.mkv,.flac,.m4a,.wav,.webm'
+    input.accept = 'video/*,audio/*,.mkv,.flac,.m4a,.wav,.webm,.vdat,.sdv'
     input.style.position = 'fixed'
     input.style.left = '-9999px'
     document.body.appendChild(input)

@@ -458,7 +458,7 @@ test('logic: 顶栏标题与返回', () => {
   assert.equal(selectHeader(initialState()).title, 'Kumquat')
   assert.equal(selectHeader(initialState()).backVisible, false)
   const convert = reducer(initialState(), { type: ACT.SCREEN, screen: 'convert' })
-  assert.equal(selectHeader(convert).title, '格式转换')
+  assert.equal(selectHeader(convert).title, '视频格式转换')
   assert.equal(selectHeader(convert).backVisible, true)
   const gif = reducer(initialState(), { type: ACT.SCREEN, screen: 'gif' })
   assert.equal(selectHeader(gif).title, '视频做 GIF')
@@ -472,7 +472,7 @@ test('logic: 顶栏标题与返回', () => {
 test('logic: 首页两张卡与最近一行', () => {
   const home = selectHome(initialState())
   assert.equal(home.question, '要做什么？')
-  assert.deepEqual(home.cards.map((card) => card.title), ['格式转换', '视频做 GIF'])
+  assert.deepEqual(home.cards.map((card) => card.title), ['视频格式转换', '音频格式转换', '视频做 GIF'])
   assert.equal(home.recent.status, 'empty')
   assert.equal(home.recent.text, '还没有记录')
 
@@ -487,7 +487,7 @@ test('logic: 转换视图含胶囊、仅换封装与按钮理由', () => {
   let state = withVideo()
   state = reducer(state, { type: ACT.TARGET, to: 'mkv' })
   let view = selectConvert(state)
-  assert.equal(view.targets.length, 9)
+  assert.equal(view.targets.length, 13)
   assert.equal(view.targets.filter((target) => target.selected).length, 1)
   assert.equal(view.copy.checked, true)
   assert.match(view.copy.meta, /不重编码/)

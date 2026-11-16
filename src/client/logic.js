@@ -7,6 +7,7 @@
 
 import {
   AUDIO_TARGET_CODEC,
+  AUDIO_EXTS,
   CONVERT_TARGETS,
   COPY_AUDIO_CODECS,
   COPY_VIDEO_CODECS,
@@ -533,7 +534,7 @@ export function selectBinary(state) {
  */
 export function selectHeader(state) {
   const caps = selectCaps(state)
-  const titles = { home: 'Kumquat', convert: '格式转换', gif: '视频做 GIF' }
+  const titles = { home: 'Kumquat', convert: '视频格式转换', audio: '音频格式转换', gif: '视频做 GIF' }
   return {
     title: titles[state.screen] || 'Kumquat',
     sub: '金桔',
@@ -560,8 +561,15 @@ export function selectHome(state) {
     cards: [
       {
         key: 'convert',
-        title: '格式转换',
+        title: '视频格式转换',
         desc: '换个格式，或把视频里的声音抽出来',
+        disabled: false,
+        reason: null,
+      },
+      {
+        key: 'audio',
+        title: '音频格式转换',
+        desc: 'MP3 / WAV / FLAC / M4A / AAC / OGG / OPUS / WMA 互转',
         disabled: false,
         reason: null,
       },
@@ -592,7 +600,8 @@ export function selectConvert(state) {
   const plan = planConvert(state)
   const convert = state.convert
   const file = convert.file
-  const targets = CONVERT_TARGETS.map((target) => {
+  const audioMode = state.screen === 'audio'
+  const targets = CONVERT_TARGETS.filter((target) => !audioMode || target.kind === 'audio').map((target) => {
     const supported = muxerSupports(caps.data, target.ext)
     return {
       ext: target.ext,
@@ -641,7 +650,8 @@ export function selectConvert(state) {
     targets,
     disabledTargets,
     copy,
-    hint: '想只要声音，直接选 MP3。',
+    hint: audioMode ? '只处理声音，不保留画面。' : '想只要声音，直接选 MP3。',
+    showCopy: !audioMode,
     etaSec,
     etaText: etaSec === null ? '' : `预计 ${etaSec} 秒`,
     canSubmit: validation.ok === true,
@@ -742,6 +752,9 @@ export function validateConvert(state) {
     return { ok: false, code: 'E_INPUT', short: '文件读不了', message: `这个文件读不了：${error.message}`, hint: error.hint, field: 'file' }
   }
   const plan = planConvert(state)
+  if (state.screen === 'audio' && plan.to !== null && !AUDIO_EXTS.includes(plan.to)) {
+    return { ok: false, code: 'NO_TARGET', short: '先选音频格式', message: '音频转换只能选音频格式', hint: '在音频格式里挑一个。', field: 'target' }
+  }
   if (plan.to === null) {
     return { ok: false, code: 'NO_TARGET', short: '先选格式', message: '选一个目标格式', hint: '九个胶囊里点一个。', field: 'target' }
   }
@@ -1215,7 +1228,10 @@ export function reducer(state, action) {
   if (!action || typeof action.type !== 'string') return state
   switch (action.type) {
     case ACT.SCREEN: {
-      const screen = action.screen === 'convert' || action.screen === 'gif' ? action.screen : 'home'
+      const screen = action.screen === 'convert' || action.screen === 'audio' || action.screen === 'gif' ? action.screen : 'home'
+      if (screen !== state.screen && (screen === 'convert' || screen === 'audio')) {
+        return { ...state, screen, convert: { ...state.convert, to: null } }
+      }
       return state.screen === screen ? state : { ...state, screen }
     }
     case ACT.CAPS_LOAD:

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 屏幕 2A · 格式转换：文件条 → 格式胶囊 → 仅换封装 → 开始转换。
  * 只有一个必答项（转成什么），其余是默认值。
  */
@@ -39,11 +39,11 @@ export function ConvertScreen(props) {
       model.disabledTargets.length > 0
         ? h('p', { className: 'kq-hint' }, model.disabledTargets.map((target) => `${target.label}：${target.reason}`).join('；'))
         : null,
-      h(CopyToggle, { copy: model.copy, onChange: props.onCopyToggle }),
+      model.showCopy === false ? null : h(CopyToggle, { copy: model.copy, onChange: props.onCopyToggle }),
       h('p', { className: 'kq-hint' }, '勾选「仅换封装」时直接复用原码流，画质完全不变；取消勾选才会重新编码。'),
       h('p', { className: 'kq-hint' }, model.hint)),
     h(Section, { label: '输出' },
-      h(OutputPicker, { dir: props.outputDir, onChoose: props.onChooseOutput })),
+      h(OutputPicker, { dir: props.outputPath || props.outputDir, onChoose: props.onChooseOutput })),
     model.error
       ? h('p', { className: 'kq-error', role: 'alert' }, `${model.error.message}${model.error.hint ? ` ${model.error.hint}` : ''}`)
       : null,
@@ -58,6 +58,7 @@ export function ConvertScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
 
 
 

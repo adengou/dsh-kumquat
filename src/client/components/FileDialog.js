@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 文件浏览对话框：列出目录、进入子目录、选中媒体文件后回填绝对路径。
  * 只读；不复制、不上传。桌面与 web 共用同一套实现，不依赖宿主原生对话框。
  */
@@ -7,7 +7,7 @@ import { h } from '../h.js'
 import { GhostButton, PrimaryButton } from './Button.js'
 import { KqIcon } from './Icon.js'
 
-const MEDIA_EXT = new Set(['mp4', 'mkv', 'mov', 'webm', 'avi', 'mp3', 'm4a', 'wav', 'flac', 'gif'])
+const MEDIA_EXT = new Set(['mp4', 'mkv', 'mov', 'webm', 'avi', 'vdat', 'sdv', 'mp3', 'm4a', 'wav', 'flac', 'gif'])
 
 /** @param {string} name */
 function extOf(name) {

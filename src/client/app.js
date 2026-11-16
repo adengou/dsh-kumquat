@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Kumquat · 面板根组件与副作用编排。
  *
  * 组件只画逻辑层给的视图模型；选文件、探测、提交、轮询、取消、修复、复制、
@@ -68,8 +68,12 @@ export function createPanel(React) {
     const [refreshKey, setRefreshKey] = React.useState(0)
     const [dialogSlot, setDialogSlot] = React.useState(null)
     const [dirDialog, setDirDialog] = React.useState(false)
+    const [minimized, setMinimized] = React.useState(false)
     const [outputDir, setOutputDirState] = React.useState(() => {
       try { return window.localStorage.getItem('kumquat.outputDir') || '' } catch { return '' }
+    })
+    const [outputPath, setOutputPathState] = React.useState(() => {
+      try { return window.localStorage.getItem('kumquat.outputPath') || '' } catch { return '' }
     })
     const [floatLayout, setFloatLayout] = React.useState(() => clampFloatLayout(readFloatLayout()))
     const floatLayoutRef = React.useRef(floatLayout)
@@ -177,10 +181,16 @@ export function createPanel(React) {
 
     const dispatch = store.dispatch
     const chooseOutputDir = async () => {
+      const st = store.getState()
+      const slot = st.screen === 'gif' ? 'gif' : 'convert'
+      const file = st[slot] && st[slot].file ? st[slot].file : null
+      const stem = file && typeof file.name === 'string' ? file.name.replace(/\.[^.]+$/, '') : 'Kumquat'
+      const ext = st.screen === 'gif' ? '.gif' : '.' + ((st.convert && st.convert.to) || 'mp4')
       if (typeof api.pick === 'function') {
-        const result = await api.pick('dir')
+        const result = await api.pick('save', stem + ext)
         if (result.ok && result.data && typeof result.data.path === 'string') {
-          setOutputDir(result.data.path)
+          setOutputPathState(result.data.path)
+          try { window.localStorage.setItem('kumquat.outputPath', result.data.path) } catch { /* ignore */ }
           return
         }
         if (result.ok && result.data && result.data.canceled === true) return
@@ -190,6 +200,8 @@ export function createPanel(React) {
 
     const setOutputDir = (dir) => {
       setOutputDirState(dir)
+      setOutputPathState('')
+      try { window.localStorage.removeItem('kumquat.outputPath') } catch { /* ignore */ }
       try { window.localStorage.setItem('kumquat.outputDir', dir) } catch { /* ignore */ }
       setDirDialog(false)
     }
@@ -298,7 +310,7 @@ export function createPanel(React) {
         return
       }
       dispatch({ type: ACT.JOB_BEGIN, slot })
-      const result = await api.run(validation.task, { outputDir })
+      const result = await api.run(validation.task, { outputDir, outputPath })
       if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task: validation.task })
       else dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
     }
@@ -318,7 +330,7 @@ export function createPanel(React) {
       }
       const slot = nextTask.kind === 'gif' ? 'gif' : 'convert'
       dispatch({ type: ACT.JOB_BEGIN, slot })
-      const result = await api.run(nextTask, { outputDir })
+      const result = await api.run(nextTask, { outputDir, outputPath })
       if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task: nextTask })
       else dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
     }
@@ -331,6 +343,15 @@ export function createPanel(React) {
     const convert = selectConvert(state)
     const gif = selectGif(state)
     const results = selectResults(state)
+
+    if (minimized) {
+      return h('button', {
+        className: 'kq-float-mini',
+        type: 'button',
+        title: '打开金桔',
+        onClick: () => setMinimized(false),
+      }, '金桔')
+    }
 
     return h('div', {
       className: 'kq-float',
@@ -353,7 +374,8 @@ export function createPanel(React) {
     h('span', { className: 'kq-float__grip' }, '\u2807'),
     h('span', { className: 'kq-float__title' }, 'Kumquat 金桔 · v' + KQ_VERSION),
     h('span', { className: 'kq-float__balance' }, balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone })),
-    h('span', { className: 'kq-float__hint' }, '按住这里拖动')),
+    h('span', { className: 'kq-float__hint' }, '按住这里拖动'),
+    h('button', { className: 'kq-float__x', type: 'button', 'aria-label': '关闭金桔面板', title: '关闭', onPointerDown: (event) => event.stopPropagation(), onClick: (event) => { event.stopPropagation(); setMinimized(true) } }, '×')),
     h('div', { className: 'kq-float__body' },
     h('section', {
       className: 'kq-panel',
@@ -373,7 +395,7 @@ export function createPanel(React) {
         })
         : null,
       state.screen === 'home' ? h(HomeScreen, { model: home, onOpen: openScreen }) : null,
-      state.screen === 'convert'
+      (state.screen === 'convert' || state.screen === 'audio')
         ? h(ConvertScreen, {
           model: convert,
           onPick: () => pick('convert'),
@@ -386,6 +408,7 @@ export function createPanel(React) {
           onCopyToggle: (checked) => dispatch({ type: ACT.COPY, copy: checked }),
           onSubmit: () => submit('convert'),
           outputDir,
+          outputPath,
           onChooseOutput: chooseOutputDir,
         })
         : null,
@@ -404,6 +427,7 @@ export function createPanel(React) {
           onField: (field, value) => dispatch({ type: ACT.GIF_FIELD, field, value }),
           onSubmit: () => submit('gif'),
           outputDir,
+          outputPath,
           onChooseOutput: chooseOutputDir,
         })
         : null,
@@ -439,6 +463,13 @@ export function createPanel(React) {
 
   return KumquatPanel
 }
+
+
+
+
+
+
+
 
 
 

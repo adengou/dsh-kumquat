@@ -43,20 +43,38 @@ export async function probe(input, options = {}) {
     throw new Error(`Cannot probe "${input}": not a regular file`)
   }
 
-  const result = await run(
-    [ffprobe, '-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', file],
-    { timeoutMs: options.timeoutMs ?? 30000 },
-  )
-  if (result.code !== 0) {
-    throw new Error(
-      `ffprobe failed for "${input}" (exit ${result.code}): ${firstLine(result.stderr) || 'no error output'}`,
-    )
+  const ext = (input.match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase()
+  const legacy = ext === 'vdat' || ext === 'sdv'
+  const base = [ffprobe, '-v', 'error', '-print_format', 'json', '-show_format', '-show_streams']
+  const attempts = legacy
+    ? [base, ...['mp4', 'mov', 'mpegts', 'mpeg', 'avi', 'matroska', 'flv'].map((name) => [...base, '-f', name])]
+    : [base]
+
+  let result
+  let parsed
+  for (const args of attempts) {
+    result = await run([...args, file], { timeoutMs: options.timeoutMs ?? 30000 })
+    if (result.code !== 0) continue
+    try {
+      parsed = JSON.parse(result.stdout)
+      break
+    } catch {
+      parsed = undefined
+    }
   }
 
-  let parsed
-  try {
-    parsed = JSON.parse(result.stdout)
-  } catch {
+  if (parsed === undefined) {
+    if (legacy) {
+      throw new Error(
+        `这个 .${ext} 文件读不出来：监控设备常用私有封装，部分还加密，ffmpeg 无法直接解析。` +
+          '请先用原厂播放器或厂商转换工具导出为 MP4/AVI，再用金桔转换。',
+      )
+    }
+    if (result.code !== 0) {
+      throw new Error(
+        `ffprobe failed for "${input}" (exit ${result.code}): ${firstLine(result.stderr) || 'no error output'}`,
+      )
+    }
     throw new Error(
       `ffprobe returned unreadable JSON for "${input}": ` +
         `${firstLine(result.stdout) || firstLine(result.stderr) || 'empty output'}`,

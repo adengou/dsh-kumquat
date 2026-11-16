@@ -60,6 +60,10 @@ const CONVERT_TARGETS = Object.freeze([
   Object.freeze({ ext: 'm4a', label: 'M4A', kind: 'audio', container: 'ipod', note: 'AAC 音频' }),
   Object.freeze({ ext: 'wav', label: 'WAV', kind: 'audio', container: 'wav', note: '无损；体积大' }),
   Object.freeze({ ext: 'flac', label: 'FLAC', kind: 'audio', container: 'flac', note: '无损；有压缩' }),
+  Object.freeze({ ext: 'aac', label: 'AAC', kind: 'audio', container: 'adts', note: '苹果/安卓通用' }),
+  Object.freeze({ ext: 'ogg', label: 'OGG', kind: 'audio', container: 'ogg', note: '开源；Vorbis' }),
+  Object.freeze({ ext: 'opus', label: 'OPUS', kind: 'audio', container: 'opus', note: '语音/音乐都省体积' }),
+  Object.freeze({ ext: 'wma', label: 'WMA', kind: 'audio', container: 'asf', note: '旧播放器兼容' }),
 ])
 
 /** 目标格式按扩展名查表。 @type {Readonly<Record<string, ConvertTarget>>} */
@@ -90,7 +94,7 @@ const GIF_FPS_OPTIONS = Object.freeze([8, 10, 12, 15, 20, 24])
 const GIF_WIDTH_OPTIONS = Object.freeze([320, 480, 640, 720, 820])
 
 /** 每个音频目标要求的编码：'pcm' 表示任意 PCM 均可。 */
-const AUDIO_TARGET_CODEC = Object.freeze({ mp3: 'mp3', m4a: 'aac', wav: 'pcm', flac: 'flac' })
+const AUDIO_TARGET_CODEC = Object.freeze({ mp3: 'mp3', m4a: 'aac', wav: 'pcm', flac: 'flac', aac: 'aac', ogg: 'vorbis', opus: 'opus', wma: 'wmav2' })
 
 /** 允许流拷贝进各视频容器的视频编码；'*' 表示容器不挑。 */
 const COPY_VIDEO_CODECS = Object.freeze({
@@ -121,6 +125,10 @@ const MUXER_ALIASES = Object.freeze({
   m4a: Object.freeze(['ipod', 'mp4', 'm4a']),
   wav: Object.freeze(['wav']),
   flac: Object.freeze(['flac']),
+  aac: Object.freeze(['adts', 'aac']),
+  ogg: Object.freeze(['ogg']),
+  opus: Object.freeze(['opus']),
+  wma: Object.freeze(['asf', 'wma']),
 })
 
 /** 编码的人类可读名。 */
@@ -143,6 +151,7 @@ const CODEC_LABELS = Object.freeze({
   opus: 'Opus',
   vorbis: 'Vorbis',
   flac: 'FLAC',
+  wmav2: 'WMA',
 })
 
 /**
@@ -899,7 +908,7 @@ function selectBinary(state) {
  */
 function selectHeader(state) {
   const caps = selectCaps(state)
-  const titles = { home: 'Kumquat', convert: '格式转换', gif: '视频做 GIF' }
+  const titles = { home: 'Kumquat', convert: '视频格式转换', audio: '音频格式转换', gif: '视频做 GIF' }
   return {
     title: titles[state.screen] || 'Kumquat',
     sub: '金桔',
@@ -926,8 +935,15 @@ function selectHome(state) {
     cards: [
       {
         key: 'convert',
-        title: '格式转换',
+        title: '视频格式转换',
         desc: '换个格式，或把视频里的声音抽出来',
+        disabled: false,
+        reason: null,
+      },
+      {
+        key: 'audio',
+        title: '音频格式转换',
+        desc: 'MP3 / WAV / FLAC / M4A / AAC / OGG / OPUS / WMA 互转',
         disabled: false,
         reason: null,
       },
@@ -958,7 +974,8 @@ function selectConvert(state) {
   const plan = planConvert(state)
   const convert = state.convert
   const file = convert.file
-  const targets = CONVERT_TARGETS.map((target) => {
+  const audioMode = state.screen === 'audio'
+  const targets = CONVERT_TARGETS.filter((target) => !audioMode || target.kind === 'audio').map((target) => {
     const supported = muxerSupports(caps.data, target.ext)
     return {
       ext: target.ext,
@@ -1007,7 +1024,8 @@ function selectConvert(state) {
     targets,
     disabledTargets,
     copy,
-    hint: '想只要声音，直接选 MP3。',
+    hint: audioMode ? '只处理声音，不保留画面。' : '想只要声音，直接选 MP3。',
+    showCopy: !audioMode,
     etaSec,
     etaText: etaSec === null ? '' : `预计 ${etaSec} 秒`,
     canSubmit: validation.ok === true,
@@ -1108,6 +1126,9 @@ function validateConvert(state) {
     return { ok: false, code: 'E_INPUT', short: '文件读不了', message: `这个文件读不了：${error.message}`, hint: error.hint, field: 'file' }
   }
   const plan = planConvert(state)
+  if (state.screen === 'audio' && plan.to !== null && !AUDIO_EXTS.includes(plan.to)) {
+    return { ok: false, code: 'NO_TARGET', short: '先选音频格式', message: '音频转换只能选音频格式', hint: '在音频格式里挑一个。', field: 'target' }
+  }
   if (plan.to === null) {
     return { ok: false, code: 'NO_TARGET', short: '先选格式', message: '选一个目标格式', hint: '九个胶囊里点一个。', field: 'target' }
   }
@@ -1581,7 +1602,10 @@ function reducer(state, action) {
   if (!action || typeof action.type !== 'string') return state
   switch (action.type) {
     case ACT.SCREEN: {
-      const screen = action.screen === 'convert' || action.screen === 'gif' ? action.screen : 'home'
+      const screen = action.screen === 'convert' || action.screen === 'audio' || action.screen === 'gif' ? action.screen : 'home'
+      if (screen !== state.screen && (screen === 'convert' || screen === 'audio')) {
+        return { ...state, screen, convert: { ...state.convert, to: null } }
+      }
       return state.screen === screen ? state : { ...state, screen }
     }
     case ACT.CAPS_LOAD:
@@ -2119,8 +2143,11 @@ function createApi(ctx = {}) {
     async capabilities() {
       return call('capabilities')
     },
-    async pick(mode) {
-      return call('pick', { body: mode === 'dir' ? { mode: 'dir' } : {} })
+    async pick(mode, defaultName) {
+      const body = {}
+      if (mode === 'dir' || mode === 'save') body.mode = mode
+      if (typeof defaultName === 'string' && defaultName !== '') body.defaultName = defaultName
+      return call('pick', { body })
     },
     async reveal(path) {
       if (typeof path !== 'string' || path === '') return { ok: false, error: { code: 'E_INPUT', message: '没有输出路径', hint: '' }, source: 'none' }
@@ -2141,6 +2168,7 @@ function createApi(ctx = {}) {
       }
       const body = { task, overwrite: Boolean(opts && opts.overwrite) }
       if (opts && typeof opts.outputDir === 'string' && opts.outputDir !== '') body.outputDir = opts.outputDir
+      if (opts && typeof opts.outputPath === 'string' && opts.outputPath !== '') body.outputPath = opts.outputPath
       return call('run', { body })
     },
     async job(id) {
@@ -2519,6 +2547,7 @@ function createFakeApi(options = {}) {
 
 
 
+
 /* ── clipboard.js ── */
 /**
  * Kumquat · 复制文本。
@@ -2650,7 +2679,7 @@ function chooseLocalFile() {
     }
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = 'video/*,audio/*,.mkv,.flac,.m4a,.wav,.webm'
+    input.accept = 'video/*,audio/*,.mkv,.flac,.m4a,.wav,.webm,.vdat,.sdv'
     input.style.position = 'fixed'
     input.style.left = '-9999px'
     document.body.appendChild(input)
@@ -2841,6 +2870,9 @@ const CSS_TEXT = `
   color:var(--kq-muted);cursor:move;user-select:none;font-size:var(--kq-fs-1);touch-action:none}
 .kq-float__grip{letter-spacing:2px}
 .kq-float__title{flex:1;color:var(--kq-text);font-weight:600;font-size:var(--kq-fs-2)}
+.kq-float-mini{position:fixed;right:18px;bottom:18px;z-index:2147482000;padding:8px 16px;
+  border-radius:999px;border:1px solid var(--kq-accent-line);background:var(--kq-accent);
+  color:#fff;font:inherit;font-size:var(--kq-fs-2);cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 .kq-float__balance{color:var(--kq-muted);font-size:var(--kq-fs-1);white-space:nowrap}
 .kq-float__hint{color:var(--kq-dim);font-size:var(--kq-fs-1)}
 .kq-float__x{background:none;border:0;color:var(--kq-muted);font-size:16px;line-height:1;padding:0 4px;cursor:pointer}
@@ -3309,7 +3341,7 @@ function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDraft, on
  */
 
 
-const MEDIA_EXT = new Set(['mp4', 'mkv', 'mov', 'webm', 'avi', 'mp3', 'm4a', 'wav', 'flac', 'gif'])
+const MEDIA_EXT = new Set(['mp4', 'mkv', 'mov', 'webm', 'avi', 'vdat', 'sdv', 'mp3', 'm4a', 'wav', 'flac', 'gif'])
 
 /** @param {string} name */
 function extOf(name) {
@@ -4019,11 +4051,11 @@ function ConvertScreen(props) {
       model.disabledTargets.length > 0
         ? h('p', { className: 'kq-hint' }, model.disabledTargets.map((target) => `${target.label}：${target.reason}`).join('；'))
         : null,
-      h(CopyToggle, { copy: model.copy, onChange: props.onCopyToggle }),
+      model.showCopy === false ? null : h(CopyToggle, { copy: model.copy, onChange: props.onCopyToggle }),
       h('p', { className: 'kq-hint' }, '勾选「仅换封装」时直接复用原码流，画质完全不变；取消勾选才会重新编码。'),
       h('p', { className: 'kq-hint' }, model.hint)),
     h(Section, { label: '输出' },
-      h(OutputPicker, { dir: props.outputDir, onChoose: props.onChooseOutput })),
+      h(OutputPicker, { dir: props.outputPath || props.outputDir, onChoose: props.onChooseOutput })),
     model.error
       ? h('p', { className: 'kq-error', role: 'alert' }, `${model.error.message}${model.error.hint ? ` ${model.error.hint}` : ''}`)
       : null,
@@ -4038,6 +4070,7 @@ function ConvertScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
 
 
 
@@ -4084,7 +4117,7 @@ function GifScreen(props) {
     h(Section, { label: '参数' },
       h(GifFields, { fields: model.fields, onChange: props.onField })),
     h(Section, { label: '输出' },
-      h(OutputPicker, { dir: props.outputDir, onChoose: props.onChooseOutput })),
+      h(OutputPicker, { dir: props.outputPath || props.outputDir, onChoose: props.onChooseOutput })),
     h('p', { className: 'kq-note kq-note--line' }, model.note),
     model.warnings.map((warning) => h('p', { key: warning, className: 'kq-hint' }, warning)),
     model.error
@@ -4101,6 +4134,7 @@ function GifScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
 
 
 
@@ -4148,7 +4182,7 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal })
  * @param {{ useState: Function, useEffect: Function, useRef: Function }} React
  */
 
-const KQ_VERSION = '0.0.32'
+const KQ_VERSION = '0.0.34'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {
@@ -4194,8 +4228,12 @@ function createPanel(React) {
     const [refreshKey, setRefreshKey] = React.useState(0)
     const [dialogSlot, setDialogSlot] = React.useState(null)
     const [dirDialog, setDirDialog] = React.useState(false)
+    const [minimized, setMinimized] = React.useState(false)
     const [outputDir, setOutputDirState] = React.useState(() => {
       try { return window.localStorage.getItem('kumquat.outputDir') || '' } catch { return '' }
+    })
+    const [outputPath, setOutputPathState] = React.useState(() => {
+      try { return window.localStorage.getItem('kumquat.outputPath') || '' } catch { return '' }
     })
     const [floatLayout, setFloatLayout] = React.useState(() => clampFloatLayout(readFloatLayout()))
     const floatLayoutRef = React.useRef(floatLayout)
@@ -4303,10 +4341,16 @@ function createPanel(React) {
 
     const dispatch = store.dispatch
     const chooseOutputDir = async () => {
+      const st = store.getState()
+      const slot = st.screen === 'gif' ? 'gif' : 'convert'
+      const file = st[slot] && st[slot].file ? st[slot].file : null
+      const stem = file && typeof file.name === 'string' ? file.name.replace(/\.[^.]+$/, '') : 'Kumquat'
+      const ext = st.screen === 'gif' ? '.gif' : '.' + ((st.convert && st.convert.to) || 'mp4')
       if (typeof api.pick === 'function') {
-        const result = await api.pick('dir')
+        const result = await api.pick('save', stem + ext)
         if (result.ok && result.data && typeof result.data.path === 'string') {
-          setOutputDir(result.data.path)
+          setOutputPathState(result.data.path)
+          try { window.localStorage.setItem('kumquat.outputPath', result.data.path) } catch { /* ignore */ }
           return
         }
         if (result.ok && result.data && result.data.canceled === true) return
@@ -4316,6 +4360,8 @@ function createPanel(React) {
 
     const setOutputDir = (dir) => {
       setOutputDirState(dir)
+      setOutputPathState('')
+      try { window.localStorage.removeItem('kumquat.outputPath') } catch { /* ignore */ }
       try { window.localStorage.setItem('kumquat.outputDir', dir) } catch { /* ignore */ }
       setDirDialog(false)
     }
@@ -4424,7 +4470,7 @@ function createPanel(React) {
         return
       }
       dispatch({ type: ACT.JOB_BEGIN, slot })
-      const result = await api.run(validation.task, { outputDir })
+      const result = await api.run(validation.task, { outputDir, outputPath })
       if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task: validation.task })
       else dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
     }
@@ -4444,7 +4490,7 @@ function createPanel(React) {
       }
       const slot = nextTask.kind === 'gif' ? 'gif' : 'convert'
       dispatch({ type: ACT.JOB_BEGIN, slot })
-      const result = await api.run(nextTask, { outputDir })
+      const result = await api.run(nextTask, { outputDir, outputPath })
       if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task: nextTask })
       else dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
     }
@@ -4457,6 +4503,15 @@ function createPanel(React) {
     const convert = selectConvert(state)
     const gif = selectGif(state)
     const results = selectResults(state)
+
+    if (minimized) {
+      return h('button', {
+        className: 'kq-float-mini',
+        type: 'button',
+        title: '打开金桔',
+        onClick: () => setMinimized(false),
+      }, '金桔')
+    }
 
     return h('div', {
       className: 'kq-float',
@@ -4479,7 +4534,8 @@ function createPanel(React) {
     h('span', { className: 'kq-float__grip' }, '\u2807'),
     h('span', { className: 'kq-float__title' }, 'Kumquat 金桔 · v' + KQ_VERSION),
     h('span', { className: 'kq-float__balance' }, balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone })),
-    h('span', { className: 'kq-float__hint' }, '按住这里拖动')),
+    h('span', { className: 'kq-float__hint' }, '按住这里拖动'),
+    h('button', { className: 'kq-float__x', type: 'button', 'aria-label': '关闭金桔面板', title: '关闭', onPointerDown: (event) => event.stopPropagation(), onClick: (event) => { event.stopPropagation(); setMinimized(true) } }, '×')),
     h('div', { className: 'kq-float__body' },
     h('section', {
       className: 'kq-panel',
@@ -4499,7 +4555,7 @@ function createPanel(React) {
         })
         : null,
       state.screen === 'home' ? h(HomeScreen, { model: home, onOpen: openScreen }) : null,
-      state.screen === 'convert'
+      (state.screen === 'convert' || state.screen === 'audio')
         ? h(ConvertScreen, {
           model: convert,
           onPick: () => pick('convert'),
@@ -4512,6 +4568,7 @@ function createPanel(React) {
           onCopyToggle: (checked) => dispatch({ type: ACT.COPY, copy: checked }),
           onSubmit: () => submit('convert'),
           outputDir,
+          outputPath,
           onChooseOutput: chooseOutputDir,
         })
         : null,
@@ -4530,6 +4587,7 @@ function createPanel(React) {
           onField: (field, value) => dispatch({ type: ACT.GIF_FIELD, field, value }),
           onSubmit: () => submit('gif'),
           outputDir,
+          outputPath,
           onChooseOutput: chooseOutputDir,
         })
         : null,
@@ -4565,6 +4623,13 @@ function createPanel(React) {
 
   return KumquatPanel
 }
+
+
+
+
+
+
+
 
 
 

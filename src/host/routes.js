@@ -395,7 +395,12 @@ export function createRouter(options) {
         }
         case 'pick': {
           if (method !== 'POST') return methodNotAllowed('POST')
-          const picked = await pickFile({ directory: body && body.mode === 'dir' })
+          const mode = body && typeof body.mode === 'string' ? body.mode : 'file'
+          const picked = await pickFile({
+            directory: mode === 'dir',
+            save: mode === 'save',
+            defaultName: body && typeof body.defaultName === 'string' ? body.defaultName : undefined,
+          })
           if (!picked.supported) {
             return fail(501, HOST_CODES.WIRING, '宿主不支持系统文件对话框', '改用内置文件浏览。')
           }
@@ -424,15 +429,21 @@ export function createRouter(options) {
           const task = validateTask(body.task)
           if (!task.ok) return fail(400, HOST_CODES.INPUT, task.message, task.hint)
           const instance = await service()
-          /** @type {{ overwrite?: boolean, outputDir?: string } | undefined} */
+          /** @type {{ overwrite?: boolean, outputDir?: string, outputPath?: string } | undefined} */
           let runOptions
-          if (typeof body.overwrite === 'boolean' || (typeof body.outputDir === 'string' && body.outputDir.trim() !== '')) {
+          const wantsPath = typeof body.outputPath === 'string' && body.outputPath.trim() !== ''
+          if (typeof body.overwrite === 'boolean' || (typeof body.outputDir === 'string' && body.outputDir.trim() !== '') || wantsPath) {
             runOptions = {}
             if (typeof body.overwrite === 'boolean') runOptions.overwrite = body.overwrite
             if (typeof body.outputDir === 'string' && body.outputDir.trim() !== '') {
               const dir = validatePath(body.outputDir)
               if (!dir.ok) return fail(400, HOST_CODES.INPUT, dir.message, dir.hint)
               runOptions.outputDir = dir.value
+            }
+            if (wantsPath) {
+              const file = validatePath(body.outputPath)
+              if (!file.ok) return fail(400, HOST_CODES.INPUT, file.message, file.hint)
+              runOptions.outputPath = file.value
             }
           }
           return { status: 202, body: progressTable.merge(await instance.run(task.value, runOptions)) }
