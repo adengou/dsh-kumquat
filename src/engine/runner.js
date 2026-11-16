@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Process runner for FFmpeg-style child processes.
  *
  * Hard rules:
@@ -30,6 +30,7 @@ import { platform } from './platform/index.js'
  * @property {number} ms         Wall-clock duration
  * @property {boolean} cancelled True when cancelled or timed out by us
  * @property {boolean} timedOut  True when the timeout fired
+ * @property {boolean} [stalled]  True when progress stopped for longer than stallMs
  */
 
 const MAX_OUTPUT_BYTES = 256 * 1024
@@ -46,6 +47,7 @@ export async function run(argv, options = {}) {
   const signal = options.signal
   const timeoutMs = options.timeoutMs
   const onProgress = options.onProgress
+  const stallMs = Number(options.stallMs) > 0 ? Number(options.stallMs) : 0
 
   if (signal?.aborted) {
     return { code: -1, stdout: '', stderr: '', ms: 0, cancelled: true, timedOut: false }
@@ -62,13 +64,14 @@ export async function run(argv, options = {}) {
   const { child } = processInfo
   const stdout = new TailBuffer(MAX_OUTPUT_BYTES)
   const stderr = new TailBuffer(MAX_OUTPUT_BYTES)
-  const progress = createProgressReader(argv, onProgress)
 
   let timedOut = false
+  let stalled = false
   let aborted = false
   let killRequested = false
   let settled = false
   let timer = null
+  let stallTimer = null
 
   const requestKill = () => {
     if (killRequested || settled) return
@@ -76,12 +79,27 @@ export async function run(argv, options = {}) {
     void Promise.resolve(platform.killTree(child.pid)).catch(() => {})
   }
 
+  const touchStall = () => {
+    if (stallMs === 0) return
+    if (stallTimer) clearTimeout(stallTimer)
+    stallTimer = setTimeout(() => { stalled = true; requestKill() }, stallMs)
+  }
+  const progress = createProgressReader(argv, (info) => {
+    touchStall()
+    if (onProgress) onProgress(info)
+  })
+  touchStall()
+
   return await new Promise((resolve, reject) => {
     const cleanup = () => {
       settled = true
       if (timer) {
         clearTimeout(timer)
         timer = null
+      }
+      if (stallTimer) {
+        clearTimeout(stallTimer)
+        stallTimer = null
       }
       if (signal) signal.removeEventListener('abort', onAbort)
     }
@@ -108,12 +126,16 @@ export async function run(argv, options = {}) {
       cleanup()
       if (processInfo.mode === 'file') {
         void collectFileOutput(processInfo, stdout, stderr, progress).then(() => {
-          resolve(result(code, stdout, stderr, startedAt, timedOut || aborted, timedOut))
+          const out = result(code, stdout, stderr, startedAt, timedOut || aborted, timedOut)
+          out.stalled = stalled
+          resolve(out)
         })
         return
       }
       progress.flush()
-      resolve(result(code, stdout, stderr, startedAt, timedOut || aborted, timedOut))
+      const out = result(code, stdout, stderr, startedAt, timedOut || aborted, timedOut)
+      out.stalled = stalled
+      resolve(out)
     })
 
     if (signal) {
@@ -391,3 +413,8 @@ class TailBuffer {
     return Buffer.concat(this.chunks, this.size).toString('utf8')
   }
 }
+
+
+
+
+

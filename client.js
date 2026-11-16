@@ -2841,6 +2841,7 @@ const CSS_TEXT = `
   color:var(--kq-muted);cursor:move;user-select:none;font-size:var(--kq-fs-1);touch-action:none}
 .kq-float__grip{letter-spacing:2px}
 .kq-float__title{flex:1;color:var(--kq-text);font-weight:600;font-size:var(--kq-fs-2)}
+.kq-float__balance{color:var(--kq-muted);font-size:var(--kq-fs-1);white-space:nowrap}
 .kq-float__hint{color:var(--kq-dim);font-size:var(--kq-fs-1)}
 .kq-float__x{background:none;border:0;color:var(--kq-muted);font-size:16px;line-height:1;padding:0 4px;cursor:pointer}
 .kq-float__body{flex:1;overflow:auto}
@@ -4145,7 +4146,7 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal })
  * @param {{ useState: Function, useEffect: Function, useRef: Function }} React
  */
 
-const KQ_VERSION = '0.0.30'
+const KQ_VERSION = '0.0.31'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {
@@ -4463,6 +4464,7 @@ function createPanel(React) {
     },
     h('span', { className: 'kq-float__grip' }, '\u2807'),
     h('span', { className: 'kq-float__title' }, 'Kumquat 金桔 · v' + KQ_VERSION),
+    h('span', { className: 'kq-float__balance' }, balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone })),
     h('span', { className: 'kq-float__hint' }, '按住这里拖动')),
     h('div', { className: 'kq-float__body' },
     h('section', {
@@ -4544,7 +4546,6 @@ function createPanel(React) {
       })
       : null,
     h('div', { className: 'kq-foot' },
-      balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone }),
       h('p', { className: 'kq-foot__note' }, '文件在本机处理；网页端选择文件会复制到临时目录。每次任务自动验收并留证据。')))))
   }
 

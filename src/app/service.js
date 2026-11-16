@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Application service: wires engine + verifier into the public contract.
  * Parallelism is delegated to the scheduler (between jobs, never inside one).
  */
@@ -147,8 +147,10 @@ export function createService(options = {}) {
     const result = await engineRun(argv, {
       signal,
       timeoutMs: JOB_TIMEOUT_MS,
+      stallMs: 120000,
       onProgress: planProgress(jobId, durationSec),
     })
+    if (result.stalled) throw Object.assign(new Error('超过 2 分钟没有进展，已停止；请重试或换个输出目录'), { code: 'E_STALL' })
     if (result.cancelled) throw Object.assign(new Error('已取消'), { cancelled: true })
     if (result.code !== 0) {
       const mapped = mapError(result.stderr, { task, input: task.input, output: targetPath })

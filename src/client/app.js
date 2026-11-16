@@ -340,6 +340,7 @@ export function createPanel(React) {
     },
     h('span', { className: 'kq-float__grip' }, '\u2807'),
     h('span', { className: 'kq-float__title' }, 'Kumquat 金桔 · v' + KQ_VERSION),
+    h('span', { className: 'kq-float__balance' }, balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone })),
     h('span', { className: 'kq-float__hint' }, '按住这里拖动')),
     h('div', { className: 'kq-float__body' },
     h('section', {
@@ -421,7 +422,6 @@ export function createPanel(React) {
       })
       : null,
     h('div', { className: 'kq-foot' },
-      balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone }),
       h('p', { className: 'kq-foot__note' }, '文件在本机处理；网页端选择文件会复制到临时目录。每次任务自动验收并留证据。')))))
   }
 

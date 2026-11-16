@@ -133,6 +133,7 @@ export const CSS_TEXT = `
   color:var(--kq-muted);cursor:move;user-select:none;font-size:var(--kq-fs-1);touch-action:none}
 .kq-float__grip{letter-spacing:2px}
 .kq-float__title{flex:1;color:var(--kq-text);font-weight:600;font-size:var(--kq-fs-2)}
+.kq-float__balance{color:var(--kq-muted);font-size:var(--kq-fs-1);white-space:nowrap}
 .kq-float__hint{color:var(--kq-dim);font-size:var(--kq-fs-1)}
 .kq-float__x{background:none;border:0;color:var(--kq-muted);font-size:16px;line-height:1;padding:0 4px;cursor:pointer}
 .kq-float__body{flex:1;overflow:auto}
