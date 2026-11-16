@@ -77,6 +77,7 @@ async function uniquePath(dir, filename) {  const ext = path.extname(filename)
  */
 export function createService(options = {}) {
   const outputDirOption = options.outputDir || null
+  const fallbackOutputDir = path.join(options.binaryRoot || path.join(os.homedir(), '.dsh', 'kumquat'), 'output')
   const evidenceRoot = path.join(options.binaryRoot || path.join(os.homedir(), '.dsh', 'kumquat'), 'jobs')
   const jobs = new Map()
   const progressSink = typeof options.onProgress === 'function' ? options.onProgress : () => {}
@@ -202,6 +203,34 @@ export function createService(options = {}) {
     await fs.rename(tempPath, finalPath)
   }
 
+  async function canFfmpegWrite(dir) {
+    // Node can write where ffmpeg cannot: Windows Controlled Folder Access
+    // blocks the encoder on Desktop/Downloads/Documents, so ask ffmpeg itself.
+    const loc = await ensureFfmpeg()
+    const probe = path.join(dir, `.kq-write-${randomUUID().slice(0, 6)}.mp4`)
+    try {
+      const result = await engineRun([
+        loc.ffmpeg, '-hide_banner', '-v', 'error', '-f', 'lavfi',
+        '-i', 'color=c=black:s=32x32:d=1', '-frames:v', '1', '-y', probe,
+      ], { timeoutMs: 15000 })
+      return result.code === 0
+    } catch {
+      return false
+    } finally {
+      await fs.rm(probe, { force: true }).catch(() => {})
+    }
+  }
+
+  async function pickOutputDir(task) {
+    const preferred = outputDirOption || path.dirname(path.resolve(task.input))
+    if (await canFfmpegWrite(preferred)) return { dir: preferred, note: null }
+    await fs.mkdir(fallbackOutputDir, { recursive: true }).catch(() => {})
+    if (await canFfmpegWrite(fallbackOutputDir)) {
+      return { dir: fallbackOutputDir, note: `目标目录不可写，成品已改到 ${fallbackOutputDir}` }
+    }
+    return { dir: preferred, note: null }
+  }
+
   async function runTask(jobId, task, signal) {
     try {
       await fs.access(task.input)
@@ -211,7 +240,15 @@ export function createService(options = {}) {
       err.handled = true
       throw err
     }
-    const outputDir = outputDirOption || path.dirname(path.resolve(task.input))
+    const chosen = await pickOutputDir(task)
+    const outputDir = chosen.dir
+    if (chosen.note !== null) {
+      const jobRecord = jobs.get(jobId)
+      if (jobRecord) {
+        jobRecord.summary.note = chosen.note
+        jobRecord.detail.note = chosen.note
+      }
+    }
     await fs.mkdir(outputDir, { recursive: true })
     const ext = task.kind === 'gif' ? '.gif' : `.${String(task.to).replace(/^\./, '').toLowerCase()}`
     const stem = path.basename(task.input, path.extname(task.input))

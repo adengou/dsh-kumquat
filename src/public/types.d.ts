@@ -143,6 +143,8 @@ export interface JobSummary {
   task: Task
   status: JobStatus
   output?: string
+  /** Human-readable note, e.g. the output directory was changed. */
+  note?: string
   startedAt: number
   endedAt?: number
   progress?: JobProgress

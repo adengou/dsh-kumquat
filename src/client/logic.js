@@ -1067,6 +1067,7 @@ export function buildResultRow(item, expanded, copied) {
   }
   const command = task === null ? '' : buildCommand(task)
   const repairAction = primary && primary.repair ? primary.repair : null
+  const note = typeof item.note === 'string' ? item.note : ''
   return {
     id: item.id,
     status: item.status,
@@ -1086,7 +1087,7 @@ export function buildResultRow(item, expanded, copied) {
       expected: expected || '—',
       actual: actual || '—',
       delta: delta || '—',
-      next: next || '—',
+      next: note !== '' ? `${note} ${next || ''}`.trim() : (next || '—'),
       checks: checks.slice(0, 6).map((check) => ({
         id: typeof check.id === 'string' ? check.id : 'check',
         outcome: check.outcome || 'pass',
