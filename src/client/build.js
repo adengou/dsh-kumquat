@@ -178,7 +178,7 @@ function main() {
   ].join('\n')
 
   const body = parsed.map((module) => `/* ── ${module.relativePath} ── */\n${module.body}`).join('\n\n')
-  const source = `${banner}
+  let source = `${banner}
 window.__ModuleLoader__.load({
   id: 'dsh-kumquat',
   factory(require) {
@@ -268,6 +268,8 @@ ${body}
   for (const name of ['bindHost', 'createPanel', 'createApi', 'CSS_TEXT', 'h']) {
     if (!declared.has(name)) throw new Error(`装配结果缺少 ${name}；检查 MODULES 顺序`)
   }
+  const pkgVersion = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version
+  source = source.split('__KQ_VERSION__').join(pkgVersion)
   new vm.Script(source, { filename: 'client.js' })
 
   if (checkOnly) {
@@ -285,4 +287,6 @@ ${body}
 }
 
 main()
+
+
 

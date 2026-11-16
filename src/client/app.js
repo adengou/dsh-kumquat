@@ -22,6 +22,7 @@ import { GifScreen } from './screens/GifScreen.js'
 import { ResultsPanel } from './screens/ResultsPanel.js'
 import { FileDialog } from './components/FileDialog.js'
 import { chooseLocalFile, uploadFile } from './pickfile.js'
+const KQ_VERSION = '__KQ_VERSION__'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {
@@ -338,7 +339,7 @@ export function createPanel(React) {
       onPointerCancel: endDrag,
     },
     h('span', { className: 'kq-float__grip' }, '\u2807'),
-    h('span', { className: 'kq-float__title' }, 'Kumquat 金桔'),
+    h('span', { className: 'kq-float__title' }, 'Kumquat 金桔 · v' + KQ_VERSION),
     h('span', { className: 'kq-float__hint' }, '按住这里拖动')),
     h('div', { className: 'kq-float__body' },
     h('section', {
@@ -426,6 +427,8 @@ export function createPanel(React) {
 
   return KumquatPanel
 }
+
+
 
 
 

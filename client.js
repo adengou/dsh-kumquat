@@ -4145,6 +4145,7 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal })
  * @param {{ useState: Function, useEffect: Function, useRef: Function }} React
  */
 
+const KQ_VERSION = '0.0.30'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {
@@ -4461,7 +4462,7 @@ function createPanel(React) {
       onPointerCancel: endDrag,
     },
     h('span', { className: 'kq-float__grip' }, '\u2807'),
-    h('span', { className: 'kq-float__title' }, 'Kumquat 金桔'),
+    h('span', { className: 'kq-float__title' }, 'Kumquat 金桔 · v' + KQ_VERSION),
     h('span', { className: 'kq-float__hint' }, '按住这里拖动')),
     h('div', { className: 'kq-float__body' },
     h('section', {
@@ -4549,6 +4550,8 @@ function createPanel(React) {
 
   return KumquatPanel
 }
+
+
 
 
 
