@@ -4020,6 +4020,7 @@ function ConvertScreen(props) {
         ? h('p', { className: 'kq-hint' }, model.disabledTargets.map((target) => `${target.label}：${target.reason}`).join('；'))
         : null,
       h(CopyToggle, { copy: model.copy, onChange: props.onCopyToggle }),
+      h('p', { className: 'kq-hint' }, '勾选「仅换封装」时直接复用原码流，画质完全不变；取消勾选才会重新编码。'),
       h('p', { className: 'kq-hint' }, model.hint)),
     h(Section, { label: '输出' },
       h(OutputPicker, { dir: props.outputDir, onChoose: props.onChooseOutput })),
@@ -4037,6 +4038,7 @@ function ConvertScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
 
 
 

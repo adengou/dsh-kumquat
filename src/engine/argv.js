@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Pure argv builders for the two Kumquat tasks.
  *
  * `buildConvert` is deliberately conservative: stream copy is only allowed
@@ -116,15 +116,15 @@ const ALIASES = Object.freeze({
 /** Preferred encoders, first available wins. */
 const VIDEO_ENCODERS = {
   mp4: [
-    { codec: 'h264', encoder: 'libx264', args: ['-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p'] },
+    { codec: 'h264', encoder: 'libx264', args: ['-c:v', 'libx264', '-preset', 'medium', '-crf', '18'] },
     { codec: 'mpeg4', encoder: 'mpeg4', args: ['-c:v', 'mpeg4', '-q:v', '3', '-pix_fmt', 'yuv420p'] },
   ],
   mov: [
-    { codec: 'h264', encoder: 'libx264', args: ['-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p'] },
+    { codec: 'h264', encoder: 'libx264', args: ['-c:v', 'libx264', '-preset', 'medium', '-crf', '18'] },
     { codec: 'mpeg4', encoder: 'mpeg4', args: ['-c:v', 'mpeg4', '-q:v', '3', '-pix_fmt', 'yuv420p'] },
   ],
   mkv: [
-    { codec: 'h264', encoder: 'libx264', args: ['-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p'] },
+    { codec: 'h264', encoder: 'libx264', args: ['-c:v', 'libx264', '-preset', 'medium', '-crf', '18'] },
     { codec: 'mpeg4', encoder: 'mpeg4', args: ['-c:v', 'mpeg4', '-q:v', '3', '-pix_fmt', 'yuv420p'] },
   ],
   webm: [
@@ -133,7 +133,7 @@ const VIDEO_ENCODERS = {
   ],
   avi: [
     { codec: 'mpeg4', encoder: 'mpeg4', args: ['-c:v', 'mpeg4', '-q:v', '3', '-pix_fmt', 'yuv420p'] },
-    { codec: 'h264', encoder: 'libx264', args: ['-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p'] },
+    { codec: 'h264', encoder: 'libx264', args: ['-c:v', 'libx264', '-preset', 'medium', '-crf', '18'] },
   ],
 }
 
