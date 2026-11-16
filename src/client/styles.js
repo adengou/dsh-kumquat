@@ -114,6 +114,8 @@ export const CSS_TEXT = `
   padding:4px 6px;cursor:pointer;border-radius:var(--kq-r-sm)}
 .kq-file__x:hover{color:var(--kq-text)}
 .kq-paste{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;margin:10px 0 0}
+.kq-paste--prompt{border:1px solid var(--kq-accent-line);background:var(--kq-accent-weak);
+  border-radius:var(--kq-r-md);padding:12px;margin-top:2px}
 .kq-paste__field{flex:1;min-width:220px}
 .kq-paste__actions{display:flex;gap:8px;padding-top:20px}
 .kq-field__label{display:block;font-size:var(--kq-fs-1);color:var(--kq-muted);margin-bottom:5px}
