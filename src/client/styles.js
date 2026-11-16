@@ -124,7 +124,7 @@ export const CSS_TEXT = `
 .kq-dl__path{font-family:ui-monospace,Consolas,monospace;font-size:var(--kq-fs-1);word-break:break-all;color:var(--kq-muted)}
 /* ── 浮动窗口 ───────────────────────────────────────── */
 .kq-veil--float{background:transparent;backdrop-filter:none;padding:0;display:block;pointer-events:none}
-.kq-float{position:fixed;pointer-events:auto;display:flex;flex-direction:column;background:var(--kq-card);
+.kq-float{position:fixed;z-index:2147482000;pointer-events:auto;display:flex;flex-direction:column;background:var(--kq-card);
   color:var(--kq-text);border:1px solid var(--kq-line);border-radius:var(--kq-r-lg);
   box-shadow:0 30px 80px rgba(0,0,0,.45);overflow:hidden;resize:both;
   min-width:420px;min-height:360px;font-family:var(--kq-font);font-size:var(--kq-fs-2);line-height:var(--kq-lh)}
@@ -133,6 +133,7 @@ export const CSS_TEXT = `
   color:var(--kq-muted);cursor:move;user-select:none;font-size:var(--kq-fs-1);touch-action:none}
 .kq-float__grip{letter-spacing:2px}
 .kq-float__title{flex:1;color:var(--kq-text);font-weight:600;font-size:var(--kq-fs-2)}
+.kq-float__hint{color:var(--kq-dim);font-size:var(--kq-fs-1)}
 .kq-float__x{background:none;border:0;color:var(--kq-muted);font-size:16px;line-height:1;padding:0 4px;cursor:pointer}
 .kq-float__body{flex:1;overflow:auto}
 .kq-float__body .kq-panel{max-width:none;border:0;border-radius:0;box-shadow:none;min-height:100%}

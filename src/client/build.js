@@ -222,84 +222,20 @@ ${body}
         } catch (error) {
           pickFile = undefined
         }
-        const readLayout = () => {
-          const fallback = { x: 0, y: 0, w: 720, h: 0 }
-          try {
-            const raw = window.localStorage.getItem('kumquat.float.v1')
-            if (raw) {
-              const data = JSON.parse(raw)
-              if (data && Number.isFinite(data.x) && Number.isFinite(data.y) && Number.isFinite(data.w) && Number.isFinite(data.h)) return data
-            }
-          } catch (error) { /* ignore */ }
-          return fallback
-        }
-        const clampLayout = (layout) => {
-          const vw = typeof window !== 'undefined' ? window.innerWidth : 1280
-          const vh = typeof window !== 'undefined' ? window.innerHeight : 900
-          const w = Math.min(Math.max(420, Number(layout.w) || 720), Math.max(420, vw - 24))
-          const h = Math.min(Math.max(360, Number(layout.h) || 760), Math.max(360, vh - 24))
-          const x = Math.min(Math.max(8, Number(layout.x) || Math.round((vw - w) / 2)), Math.max(8, vw - w - 8))
-          const y = Math.min(Math.max(8, Number(layout.y) || 64), Math.max(8, vh - 120))
-          return { x, y, w, h }
-        }
-        const Launcher = (props) => {
-          const [open, setOpen] = React.useState(props && props.defaultOpen === true)
-          const [layout, setLayout] = React.useState(() => clampLayout(readLayout()))
-          const layoutRef = React.useRef(layout)
-          const dragRef = React.useRef(null)
-          const boxRef = React.useRef(null)
-          React.useEffect(() => { layoutRef.current = layout }, [layout])
-          React.useEffect(() => {
-            if (!open) return undefined
-            const el = boxRef.current
-            if (!el || typeof ResizeObserver !== 'function') return undefined
-            const observer = new ResizeObserver(() => {
-              const rect = el.getBoundingClientRect()
-              const next = clampLayout({ x: rect.left, y: rect.top, w: rect.width, h: rect.height })
-              layoutRef.current = next
-              try { window.localStorage.setItem('kumquat.float.v1', JSON.stringify(next)) } catch (error) { /* ignore */ }
-              setLayout(next)
-            })
-            observer.observe(el)
-            return () => observer.disconnect()
-          }, [open])
-          const persist = (next) => {
-            try { window.localStorage.setItem('kumquat.float.v1', JSON.stringify(next)) } catch (error) { /* ignore */ }
+        const Launcher = () => {
+          const open = () => {
+            try {
+              const layout = typeof ctx.get === 'function' ? ctx.get('layout') : undefined
+              if (layout && typeof layout.selectPanel === 'function') layout.selectPanel('kumquat')
+            } catch (error) { /* ignore */ }
           }
-          const startDrag = (event) => {
-            if (event.button !== 0) return
-            const box = boxRef.current
-            if (!box) return
-            const rect = box.getBoundingClientRect()
-            dragRef.current = { dx: event.clientX - rect.left, dy: event.clientY - rect.top }
-            if (event.currentTarget.setPointerCapture) event.currentTarget.setPointerCapture(event.pointerId)
-          }
-          const moveDrag = (event) => {
-            const drag = dragRef.current
-            const box = boxRef.current
-            if (!drag || !box) return
-            const rect = box.getBoundingClientRect()
-            const next = clampLayout({ x: event.clientX - drag.dx, y: event.clientY - drag.dy, w: rect.width, h: rect.height })
-            layoutRef.current = next
-            setLayout(next)
-          }
-          const endDrag = (event) => {
-            if (!dragRef.current) return
-            dragRef.current = null
-            if (event && event.currentTarget && event.currentTarget.releasePointerCapture) {
-              try { event.currentTarget.releasePointerCapture(event.pointerId) } catch (error) { /* ignore */ }
-            }
-            persist(layoutRef.current)
-          }
-          const close = () => setOpen(false)
           return h('span', { className: 'kq-launchwrap' },
             h('button', {
               className: 'kq-launch',
               type: 'button',
               title: '金桔',
               'aria-haspopup': 'dialog',
-              'aria-expanded': open ? 'true' : 'false',
-              onClick: () => setOpen(true),
+              onClick: open,
             },
             h('svg', {
               width: 16, height: 16, viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false',
@@ -307,27 +243,7 @@ ${body}
             },
             h('circle', { cx: 8, cy: 9.5, r: 5.5, fill: 'currentColor' }),
             h('path', { d: 'M8 4c0-2 1.4-3 3-3-.4 2-1.4 3-3 3z', fill: '#3ddc97' })),
-            h('span', { style: { fontSize: 12.5 } }, '金桔')),
-            open
-              ? h('div', { className: 'kq-veil kq-veil--float', role: 'dialog', 'aria-label': '金桔' },
-                h('div', {
-                  className: 'kq-float',
-                  ref: boxRef,
-                  tabIndex: -1,
-                  style: { left: layout.x + 'px', top: layout.y + 'px', width: layout.w + 'px', height: layout.h + 'px' },
-                },
-                h('div', {
-                  className: 'kq-float__bar',
-                  onPointerDown: startDrag,
-                  onPointerMove: moveDrag,
-                  onPointerUp: endDrag,
-                  onPointerCancel: endDrag,
-                },
-                h('span', { className: 'kq-float__grip' }, '\u2807'),
-                h('span', { className: 'kq-float__title' }, 'Kumquat 金桔'),
-                h('button', { className: 'kq-float__x', type: 'button', 'aria-label': '关闭', onClick: close }, '\u00d7')),
-                h('div', { className: 'kq-float__body' }, h(Panel, Object.assign({}, props, { api, pickFile })))))
-              : null)
+            h('span', { style: { fontSize: 12.5 } }, '金桔')))
         }        // The layout switches panels by id: a same-key 'main' registration is
         // required, even though the overlay is what users actually see.
         const Bound = (slotProps) => h(Panel, Object.assign({}, slotProps, { api, pickFile }))

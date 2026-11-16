@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Kumquat · 面板根组件与副作用编排。
  *
  * 组件只画逻辑层给的视图模型；选文件、探测、提交、轮询、取消、修复、复制、
@@ -22,6 +22,40 @@ import { GifScreen } from './screens/GifScreen.js'
 import { ResultsPanel } from './screens/ResultsPanel.js'
 import { FileDialog } from './components/FileDialog.js'
 import { chooseLocalFile, uploadFile } from './pickfile.js'
+const FLOAT_KEY = 'kumquat.float.v1'
+
+function readFloatLayout() {
+  try {
+    const raw = window.localStorage.getItem(FLOAT_KEY)
+    if (raw) {
+      const data = JSON.parse(raw)
+      if (data && Number.isFinite(data.x) && Number.isFinite(data.y) && Number.isFinite(data.w) && Number.isFinite(data.h)) return data
+    }
+  } catch {
+    /* ignore */
+  }
+  return { x: 0, y: 0, w: 720, h: 0 }
+}
+
+function clampFloatLayout(input) {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1280
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 900
+  const w = Math.min(Math.max(420, Number(input.w) || 720), Math.max(420, vw - 24))
+  const h = Math.min(Math.max(360, Number(input.h) || Math.round(vh * 0.82)), Math.max(360, vh - 24))
+  const x = Math.min(Math.max(8, Number(input.x) || Math.round((vw - w) / 2)), Math.max(8, vw - w - 8))
+  const y = Math.min(Math.max(8, Number(input.y) || 56), Math.max(8, vh - 120))
+  return { x, y, w, h }
+}
+
+function persistFloatLayout(next) {
+  try {
+    window.localStorage.setItem(FLOAT_KEY, JSON.stringify(next))
+  } catch {
+    /* ignore */
+  }
+}
+
+/** @param {any} React */
 export function createPanel(React) {
   /**
    * @param {{ api?: any, pickFile?: Function, hostCtx?: any }} props
@@ -36,6 +70,49 @@ export function createPanel(React) {
     const [outputDir, setOutputDirState] = React.useState(() => {
       try { return window.localStorage.getItem('kumquat.outputDir') || '' } catch { return '' }
     })
+    const [floatLayout, setFloatLayout] = React.useState(() => clampFloatLayout(readFloatLayout()))
+    const floatLayoutRef = React.useRef(floatLayout)
+    const floatRef = React.useRef(null)
+    const dragRef = React.useRef(null)
+    React.useEffect(() => { floatLayoutRef.current = floatLayout }, [floatLayout])
+    React.useEffect(() => {
+      const el = floatRef.current
+      if (!el || typeof ResizeObserver !== 'function') return undefined
+      const observer = new ResizeObserver(() => {
+        const rect = el.getBoundingClientRect()
+        const next = clampFloatLayout({ x: rect.left, y: rect.top, w: rect.width, h: rect.height })
+        floatLayoutRef.current = next
+        persistFloatLayout(next)
+        setFloatLayout(next)
+      })
+      observer.observe(el)
+      return () => observer.disconnect()
+    }, [])
+    const startDrag = (event) => {
+      if (event.button !== 0) return
+      const el = floatRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      dragRef.current = { dx: event.clientX - rect.left, dy: event.clientY - rect.top }
+      if (event.currentTarget.setPointerCapture) event.currentTarget.setPointerCapture(event.pointerId)
+    }
+    const moveDrag = (event) => {
+      const drag = dragRef.current
+      const el = floatRef.current
+      if (!drag || !el) return
+      const rect = el.getBoundingClientRect()
+      const next = clampFloatLayout({ x: event.clientX - drag.dx, y: event.clientY - drag.dy, w: rect.width, h: rect.height })
+      floatLayoutRef.current = next
+      setFloatLayout(next)
+    }
+    const endDrag = (event) => {
+      if (!dragRef.current) return
+      dragRef.current = null
+      if (event && event.currentTarget && event.currentTarget.releasePointerCapture) {
+        try { event.currentTarget.releasePointerCapture(event.pointerId) } catch { /* ignore */ }
+      }
+      persistFloatLayout(floatLayoutRef.current)
+    }
     const storeRef = React.useRef(null)
     const abortRef = React.useRef(null)
     if (storeRef.current === null) storeRef.current = createStore(reducer, initialState())
@@ -242,7 +319,29 @@ export function createPanel(React) {
     const gif = selectGif(state)
     const results = selectResults(state)
 
-    return h('section', {
+    return h('div', {
+      className: 'kq-float',
+      ref: floatRef,
+      tabIndex: -1,
+      style: {
+        left: floatLayout.x + 'px',
+        top: floatLayout.y + 'px',
+        width: floatLayout.w + 'px',
+        height: floatLayout.h + 'px',
+      },
+    },
+    h('div', {
+      className: 'kq-float__bar',
+      onPointerDown: startDrag,
+      onPointerMove: moveDrag,
+      onPointerUp: endDrag,
+      onPointerCancel: endDrag,
+    },
+    h('span', { className: 'kq-float__grip' }, '\u2807'),
+    h('span', { className: 'kq-float__title' }, 'Kumquat 金桔'),
+    h('span', { className: 'kq-float__hint' }, '按住这里拖动')),
+    h('div', { className: 'kq-float__body' },
+    h('section', {
       className: 'kq-panel',
       'aria-label': 'Kumquat 金桔',
       'data-kumquat-root': 'true',
@@ -322,7 +421,7 @@ export function createPanel(React) {
       : null,
     h('div', { className: 'kq-foot' },
       balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone }),
-      h('p', { className: 'kq-foot__note' }, '文件以本机路径登记，不上传、不复制；每次任务自动验收并留证据。')))
+      h('p', { className: 'kq-foot__note' }, '文件在本机处理；网页端选择文件会复制到临时目录。每次任务自动验收并留证据。')))))
   }
 
   return KumquatPanel
