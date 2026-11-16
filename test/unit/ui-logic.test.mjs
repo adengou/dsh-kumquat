@@ -439,11 +439,17 @@ test('logic: reducer FFmpeg 横幅四态', () => {
   assert.equal(selectBinary(cancelled).cancelled, true)
 })
 
-test('logic: reducer 余额四态', () => {
-  assert.deepEqual(selectBalance(initialState()), { text: '余额 读取中…', tone: 'muted' })
-  assert.equal(selectBalance(reducer(initialState(), { type: ACT.BALANCE_OK, data: { ok: true, currency: 'CNY', total: '12.34' } })).text, '余额 ¥12.34')
-  assert.equal(selectBalance(reducer(initialState(), { type: ACT.BALANCE_OK, data: { ok: false } })).text, '余额 未配置')
-  assert.equal(selectBalance(reducer(initialState(), { type: ACT.BALANCE_ERR, error: { code: 'E_OFFLINE', message: '没响应', hint: '' } })).text, '余额 未连接')
+test('logic: 余额四态，未配置时整行隐藏', () => {
+  assert.deepEqual(selectBalance(initialState()), { text: '', tone: 'muted', visible: false })
+  const ready = selectBalance(reducer(initialState(), { type: ACT.BALANCE_OK, data: { ok: true, currency: 'CNY', total: '12.34' } }))
+  assert.equal(ready.text, '余额 ¥12.34')
+  assert.equal(ready.visible, true)
+  const missing = selectBalance(reducer(initialState(), { type: ACT.BALANCE_OK, data: { ok: false } }))
+  assert.equal(missing.text, '')
+  assert.equal(missing.visible, false)
+  const offline = selectBalance(reducer(initialState(), { type: ACT.BALANCE_ERR, error: { code: 'E_OFFLINE', message: '没响应', hint: '' } }))
+  assert.equal(offline.text, '余额 未连接')
+  assert.equal(offline.visible, true)
 })
 
 /* ── 视图模型 ───────────────────────────────────────── */

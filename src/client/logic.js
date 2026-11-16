@@ -1161,16 +1161,18 @@ export function selectBalance(state) {
   const balance = state.balance
   if (balance.status === 'error') {
     const error = normalizeError(balance.error)
-    return { text: isOfflineCode(error.code) ? '余额 未连接' : `余额 读取失败`, tone: 'error' }
+    return { text: isOfflineCode(error.code) ? '余额 未连接' : '余额 读取失败', tone: 'error', visible: true }
   }
-  if (balance.status !== 'ready') return { text: '余额 读取中…', tone: 'muted' }
+  // No key configured: the widget does not exist at all. A public install
+  // should not advertise a feature the user never asked for.
+  if (balance.status !== 'ready') return { text: '', tone: 'muted', visible: false }
   const data = balance.data
-  if (!data || data.ok !== true || data.available === false) return { text: '余额 未配置', tone: 'muted' }
+  if (!data || data.ok !== true || data.available === false) return { text: '', tone: 'muted', visible: false }
   const total = typeof data.total === 'string' ? data.total : ''
-  if (total === '') return { text: '余额 未配置', tone: 'muted' }
+  if (total === '') return { text: '', tone: 'muted', visible: false }
   const currency = typeof data.currency === 'string' ? data.currency.toUpperCase() : 'CNY'
   const symbol = currency === 'CNY' ? '¥' : currency === 'USD' ? '$' : `${currency} `
-  return { text: `余额 ${symbol}${total}`, tone: 'ready' }
+  return { text: `余额 ${symbol}${total}`, tone: 'ready', visible: true }
 }
 
 /**

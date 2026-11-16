@@ -270,7 +270,7 @@ export function createPanel(React) {
         : null,
       state.notice ? h('p', { className: 'kq-hint', role: 'status' }, state.notice) : null),
     h('div', { className: 'kq-foot' },
-      h(BalanceLine, { text: balance.text, tone: balance.tone }),
+      balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone }),
       h('p', { className: 'kq-foot__note' }, '文件以本机路径登记，不上传、不复制；每次任务自动验收并留证据。')))
   }
 
