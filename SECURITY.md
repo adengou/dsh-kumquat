@@ -7,7 +7,7 @@
 ## 密钥
 
 - 本项目**不包含任何真实 API Key**，仓库中只允许 `sk-...` 占位符。
-- Key 的合法来源只有两处：环境变量 `DEEPSEEK_API_KEY`，或 profile 的 `cordis.patch.yml` 中 `kumquat.config.apiKey`。
+- Key 的来源按优先级：插件配置 `kumquat.config.apiKey` → 环境变量 `DEEPSEEK_API_KEY` → Harness 凭据服务里的同名引用（与聊天模型共用同一把 key）。
 - Key 只在宿主进程内使用，不下发客户端、不写日志、不进错误信息。
 - 未配置 key 时，插件不发起任何与余额相关的网络请求。
 

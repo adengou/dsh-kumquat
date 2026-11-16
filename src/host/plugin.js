@@ -114,8 +114,23 @@ export async function apply(ctx, config) {
     },
   })
 
+  // Reuse the key Harness already stores (the same DEEPSEEK_API_KEY the chat
+  // provider uses). Explicit plugin config still wins, then the process
+  // environment, then the credential store.
+  const readStoredKey = async () => {
+    try {
+      const credentials = typeof ctx.get === 'function' ? ctx.get('credentials') : undefined
+      if (!credentials || typeof credentials.resolve !== 'function') return undefined
+      const hit = await credentials.resolve('DEEPSEEK_API_KEY')
+      const value = hit && typeof hit === 'object' ? hit.value : undefined
+      return typeof value === 'string' && value !== '' ? value : undefined
+    } catch {
+      return undefined
+    }
+  }
+
   const balance = createBalance({
-    getApiKey: () => resolved.apiKey,
+    getApiKey: async () => resolved.apiKey ?? (await readStoredKey()),
     cacheMs: resolved.balanceRefreshMs,
   })
 

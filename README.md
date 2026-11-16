@@ -60,7 +60,8 @@ DSH 桌面客户端与 `dsh web` 共用同一份客户端 bundle。文件以本�
 
 ## 安全与隐私
 
-- 唯一的网络出口是余额查询 `GET https://api.deepseek.com/user/balance`，仅在配置了 key 时发起；
+- 唯一的网络出口是余额查询 `GET https://api.deepseek.com/user/balance`，仅在拿到 key 时发起；
+- 默认复用 Harness 凭据里已保存的 `DEEPSEEK_API_KEY`，通常不需要单独配置；插件配置或环境变量可以覆盖它；
 - 未配置 key 时余额行直接隐藏，不会出现“未配置”提示，也不会有任何相关请求；
 - key 只在宿主进程内存中拼 Bearer 头，**不下发浏览器、不进日志**；
 - 仓库里只有 `sk-...` 占位符，真实 key 请用环境变量 `DEEPSEEK_API_KEY` 或 profile 配置；
