@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Kumquat · 全部样式，一个字符串。
  *
  * 规则（design/tokens.css 落地）：
@@ -122,6 +122,20 @@ export const CSS_TEXT = `
 .kq-output__label{flex:none;color:var(--kq-dim)}
 .kq-output__path{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--kq-text)}
 .kq-dl__path{font-family:ui-monospace,Consolas,monospace;font-size:var(--kq-fs-1);word-break:break-all;color:var(--kq-muted)}
+/* ── 浮动窗口 ───────────────────────────────────────── */
+.kq-veil--float{background:transparent;backdrop-filter:none;padding:0;display:block;pointer-events:none}
+.kq-float{position:fixed;pointer-events:auto;display:flex;flex-direction:column;background:var(--kq-card);
+  color:var(--kq-text);border:1px solid var(--kq-line);border-radius:var(--kq-r-lg);
+  box-shadow:0 30px 80px rgba(0,0,0,.45);overflow:hidden;resize:both;
+  min-width:420px;min-height:360px;font-family:var(--kq-font);font-size:var(--kq-fs-2);line-height:var(--kq-lh)}
+.kq-float__bar{display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border-bottom:1px solid var(--kq-line);background:var(--kq-raise);
+  color:var(--kq-muted);cursor:move;user-select:none;font-size:var(--kq-fs-1);touch-action:none}
+.kq-float__grip{letter-spacing:2px}
+.kq-float__title{flex:1;color:var(--kq-text);font-weight:600;font-size:var(--kq-fs-2)}
+.kq-float__x{background:none;border:0;color:var(--kq-muted);font-size:16px;line-height:1;padding:0 4px;cursor:pointer}
+.kq-float__body{flex:1;overflow:auto}
+.kq-float__body .kq-panel{max-width:none;border:0;border-radius:0;box-shadow:none;min-height:100%}
 .kq-fs{width:min(720px,100%);max-height:min(88vh,860px);display:flex;flex-direction:column;
   background:var(--kq-card);color:var(--kq-text);border:1px solid var(--kq-line);
   border-radius:var(--kq-r-lg);box-shadow:var(--kq-shadow);overflow:hidden;

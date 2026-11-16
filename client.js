@@ -2830,6 +2830,20 @@ const CSS_TEXT = `
 .kq-output__label{flex:none;color:var(--kq-dim)}
 .kq-output__path{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--kq-text)}
 .kq-dl__path{font-family:ui-monospace,Consolas,monospace;font-size:var(--kq-fs-1);word-break:break-all;color:var(--kq-muted)}
+/* ── 浮动窗口 ───────────────────────────────────────── */
+.kq-veil--float{background:transparent;backdrop-filter:none;padding:0;display:block;pointer-events:none}
+.kq-float{position:fixed;pointer-events:auto;display:flex;flex-direction:column;background:var(--kq-card);
+  color:var(--kq-text);border:1px solid var(--kq-line);border-radius:var(--kq-r-lg);
+  box-shadow:0 30px 80px rgba(0,0,0,.45);overflow:hidden;resize:both;
+  min-width:420px;min-height:360px;font-family:var(--kq-font);font-size:var(--kq-fs-2);line-height:var(--kq-lh)}
+.kq-float__bar{display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border-bottom:1px solid var(--kq-line);background:var(--kq-raise);
+  color:var(--kq-muted);cursor:move;user-select:none;font-size:var(--kq-fs-1);touch-action:none}
+.kq-float__grip{letter-spacing:2px}
+.kq-float__title{flex:1;color:var(--kq-text);font-weight:600;font-size:var(--kq-fs-2)}
+.kq-float__x{background:none;border:0;color:var(--kq-muted);font-size:16px;line-height:1;padding:0 4px;cursor:pointer}
+.kq-float__body{flex:1;overflow:auto}
+.kq-float__body .kq-panel{max-width:none;border:0;border-radius:0;box-shadow:none;min-height:100%}
 .kq-fs{width:min(720px,100%);max-height:min(88vh,860px);display:flex;flex-direction:column;
   background:var(--kq-card);color:var(--kq-text);border:1px solid var(--kq-line);
   border-radius:var(--kq-r-lg);box-shadow:var(--kq-shadow);overflow:hidden;
@@ -4482,8 +4496,75 @@ function createPanel(React) {
         } catch (error) {
           pickFile = undefined
         }
+        const readLayout = () => {
+          const fallback = { x: 0, y: 0, w: 720, h: 0 }
+          try {
+            const raw = window.localStorage.getItem('kumquat.float.v1')
+            if (raw) {
+              const data = JSON.parse(raw)
+              if (data && Number.isFinite(data.x) && Number.isFinite(data.y) && Number.isFinite(data.w) && Number.isFinite(data.h)) return data
+            }
+          } catch (error) { /* ignore */ }
+          return fallback
+        }
+        const clampLayout = (layout) => {
+          const vw = typeof window !== 'undefined' ? window.innerWidth : 1280
+          const vh = typeof window !== 'undefined' ? window.innerHeight : 900
+          const w = Math.min(Math.max(420, Number(layout.w) || 720), Math.max(420, vw - 24))
+          const h = Math.min(Math.max(360, Number(layout.h) || 760), Math.max(360, vh - 24))
+          const x = Math.min(Math.max(8, Number(layout.x) || Math.round((vw - w) / 2)), Math.max(8, vw - w - 8))
+          const y = Math.min(Math.max(8, Number(layout.y) || 64), Math.max(8, vh - 120))
+          return { x, y, w, h }
+        }
         const Launcher = (props) => {
           const [open, setOpen] = React.useState(props && props.defaultOpen === true)
+          const [layout, setLayout] = React.useState(() => clampLayout(readLayout()))
+          const layoutRef = React.useRef(layout)
+          const dragRef = React.useRef(null)
+          const boxRef = React.useRef(null)
+          React.useEffect(() => { layoutRef.current = layout }, [layout])
+          React.useEffect(() => {
+            if (!open) return undefined
+            const el = boxRef.current
+            if (!el || typeof ResizeObserver !== 'function') return undefined
+            const observer = new ResizeObserver(() => {
+              const rect = el.getBoundingClientRect()
+              const next = clampLayout({ x: rect.left, y: rect.top, w: rect.width, h: rect.height })
+              layoutRef.current = next
+              try { window.localStorage.setItem('kumquat.float.v1', JSON.stringify(next)) } catch (error) { /* ignore */ }
+              setLayout(next)
+            })
+            observer.observe(el)
+            return () => observer.disconnect()
+          }, [open])
+          const persist = (next) => {
+            try { window.localStorage.setItem('kumquat.float.v1', JSON.stringify(next)) } catch (error) { /* ignore */ }
+          }
+          const startDrag = (event) => {
+            if (event.button !== 0) return
+            const box = boxRef.current
+            if (!box) return
+            const rect = box.getBoundingClientRect()
+            dragRef.current = { dx: event.clientX - rect.left, dy: event.clientY - rect.top }
+            if (event.currentTarget.setPointerCapture) event.currentTarget.setPointerCapture(event.pointerId)
+          }
+          const moveDrag = (event) => {
+            const drag = dragRef.current
+            const box = boxRef.current
+            if (!drag || !box) return
+            const rect = box.getBoundingClientRect()
+            const next = clampLayout({ x: event.clientX - drag.dx, y: event.clientY - drag.dy, w: rect.width, h: rect.height })
+            layoutRef.current = next
+            setLayout(next)
+          }
+          const endDrag = (event) => {
+            if (!dragRef.current) return
+            dragRef.current = null
+            if (event && event.currentTarget && event.currentTarget.releasePointerCapture) {
+              try { event.currentTarget.releasePointerCapture(event.pointerId) } catch (error) { /* ignore */ }
+            }
+            persist(layoutRef.current)
+          }
           const close = () => setOpen(false)
           return h('span', { className: 'kq-launchwrap' },
             h('button', {
@@ -4502,20 +4583,26 @@ function createPanel(React) {
             h('path', { d: 'M8 4c0-2 1.4-3 3-3-.4 2-1.4 3-3 3z', fill: '#3ddc97' })),
             h('span', { style: { fontSize: 12.5 } }, '金桔')),
             open
-              ? h('div', {
-                className: 'kq-veil',
-                role: 'dialog',
-                'aria-modal': 'true',
-                'aria-label': '金桔',
-                onClick: (event) => { if (event.target === event.currentTarget) close() },
-                onKeyDown: (event) => { if (event.key === 'Escape') close() },
-              },
-              h('div', { className: 'kq-veil__box' },
-                h('button', { className: 'kq-veil__close', type: 'button', 'aria-label': '关闭', onClick: close }, '×'),
-                h(Panel, Object.assign({}, props, { api, pickFile }))))
+              ? h('div', { className: 'kq-veil kq-veil--float', role: 'dialog', 'aria-label': '金桔' },
+                h('div', {
+                  className: 'kq-float',
+                  ref: boxRef,
+                  tabIndex: -1,
+                  style: { left: layout.x + 'px', top: layout.y + 'px', width: layout.w + 'px', height: layout.h + 'px' },
+                },
+                h('div', {
+                  className: 'kq-float__bar',
+                  onPointerDown: startDrag,
+                  onPointerMove: moveDrag,
+                  onPointerUp: endDrag,
+                  onPointerCancel: endDrag,
+                },
+                h('span', { className: 'kq-float__grip' }, '⠇'),
+                h('span', { className: 'kq-float__title' }, 'Kumquat 金桔'),
+                h('button', { className: 'kq-float__x', type: 'button', 'aria-label': '关闭', onClick: close }, '×')),
+                h('div', { className: 'kq-float__body' }, h(Panel, Object.assign({}, props, { api, pickFile })))))
               : null)
-        }
-        // The layout switches panels by id: a same-key 'main' registration is
+        }        // The layout switches panels by id: a same-key 'main' registration is
         // required, even though the overlay is what users actually see.
         const Bound = (slotProps) => h(Panel, Object.assign({}, slotProps, { api, pickFile }))
         const register = (name, options, component) => {
