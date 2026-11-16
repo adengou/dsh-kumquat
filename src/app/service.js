@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Application service: wires engine + verifier into the public contract.
  * Parallelism is delegated to the scheduler (between jobs, never inside one).
  */
@@ -221,8 +221,10 @@ export function createService(options = {}) {
     }
   }
 
-  async function pickOutputDir(task) {
-    const preferred = outputDirOption || path.dirname(path.resolve(task.input))
+  async function pickOutputDir(task, preferredDir) {
+    const uploadsRoot = path.join(options.binaryRoot || path.join(os.homedir(), '.dsh', 'kumquat'), 'uploads')
+    const fromUpload = path.resolve(task.input).startsWith(uploadsRoot + path.sep)
+    const preferred = preferredDir || outputDirOption || (fromUpload ? fallbackOutputDir : path.dirname(path.resolve(task.input)))
     if (await canFfmpegWrite(preferred)) return { dir: preferred, note: null }
     await fs.mkdir(fallbackOutputDir, { recursive: true }).catch(() => {})
     if (await canFfmpegWrite(fallbackOutputDir)) {
@@ -231,7 +233,7 @@ export function createService(options = {}) {
     return { dir: preferred, note: null }
   }
 
-  async function runTask(jobId, task, signal) {
+  async function runTask(jobId, task, signal, preferredDir) {
     try {
       await fs.access(task.input)
     } catch {
@@ -240,7 +242,7 @@ export function createService(options = {}) {
       err.handled = true
       throw err
     }
-    const chosen = await pickOutputDir(task)
+    const chosen = await pickOutputDir(task, preferredDir)
     const outputDir = chosen.dir
     if (chosen.note !== null) {
       const jobRecord = jobs.get(jobId)
@@ -368,7 +370,7 @@ export function createService(options = {}) {
       id,
       run: async (signal) => {
         summary.status = 'running'
-        const result = await runTask(id, task, signal)
+        const result = await runTask(id, task, signal, opts.outputDir)
         summary.status = result.ok ? 'done' : 'failed'
         return result
       },
@@ -453,3 +455,8 @@ export function createService(options = {}) {
 }
 
 export { estimateGifBytes }
+
+
+
+
+

@@ -2139,7 +2139,9 @@ function createApi(ctx = {}) {
       if (!task || typeof task !== 'object') {
         return { ok: false, error: { code: 'E_INPUT', message: '任务不完整', hint: '检查文件与参数。' }, source: 'none' }
       }
-      return call('run', { body: { task, overwrite: Boolean(opts && opts.overwrite) } })
+      const body = { task, overwrite: Boolean(opts && opts.overwrite) }
+      if (opts && typeof opts.outputDir === 'string' && opts.outputDir !== '') body.outputDir = opts.outputDir
+      return call('run', { body })
     },
     async job(id) {
       if (typeof id !== 'string' || id === '') {
@@ -2516,6 +2518,7 @@ function createFakeApi(options = {}) {
 
 
 
+
 /* ── clipboard.js ── */
 /**
  * Kumquat · 复制文本。
@@ -2823,6 +2826,9 @@ const CSS_TEXT = `
   border-radius:var(--kq-r-md);padding:12px;margin-top:2px}
 
 /* ── 文件浏览对话框 ─────────────────────────────────── */
+.kq-output{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:var(--kq-fs-2);color:var(--kq-muted)}
+.kq-output__label{flex:none;color:var(--kq-dim)}
+.kq-output__path{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--kq-text)}
 .kq-dl__path{font-family:ui-monospace,Consolas,monospace;font-size:var(--kq-fs-1);word-break:break-all;color:var(--kq-muted)}
 .kq-fs{width:min(720px,100%);max-height:min(88vh,860px);display:flex;flex-direction:column;
   background:var(--kq-card);color:var(--kq-text);border:1px solid var(--kq-line);
@@ -3013,6 +3019,7 @@ const CSS_TEXT = `
 /* Only movement: an opacity ramp made screenshots and slow GPUs look washed out. */
 @keyframes kq-rise{from{transform:translateY(6px)}to{transform:none}}
 `
+
 
 
 
@@ -3303,7 +3310,8 @@ function extOf(name) {
  *   onChoose: (path: string, name: string) => void,
  * }} props
  */
-function FileDialog({ React, api, slot, onClose, onChoose }) {
+function FileDialog({ React, api, slot, mode, onClose, onChoose }) {
+  const pickingDir = mode === 'dir'
   const [listing, setListing] = React.useState(null)
   const [pathText, setPathText] = React.useState('')
   const [selected, setSelected] = React.useState(null)
@@ -3328,7 +3336,7 @@ function FileDialog({ React, api, slot, onClose, onChoose }) {
     void load('')
   }, [])
 
-  const entries = listing && Array.isArray(listing.entries) ? listing.entries : []
+  const entries = (listing && Array.isArray(listing.entries) ? listing.entries : []).filter((entry) => !pickingDir || entry.type === 'dir')
   const roots = listing && Array.isArray(listing.roots) ? listing.roots : []
   const quick = listing && Array.isArray(listing.quick) ? listing.quick : []
   const parent = listing && typeof listing.parent === 'string' ? listing.parent : ''
@@ -3345,15 +3353,15 @@ function FileDialog({ React, api, slot, onClose, onChoose }) {
     className: 'kq-veil',
     role: 'dialog',
     'aria-modal': 'true',
-    'aria-label': '添加文件',
+    'aria-label': pickingDir ? '选择输出文件夹' : '添加文件',
     onClick: (event) => { if (event.target === event.currentTarget) onClose() },
     onKeyDown: (event) => { if (event.key === 'Escape') onClose() },
   },
   h('div', { className: 'kq-fs' },
     h('div', { className: 'kq-fs__head' },
       h(KqIcon, { name: 'film', size: 16 }),
-      h('span', { className: 'kq-fs__title' }, '添加文件'),
-      h('span', { className: 'kq-fs__tag' }, slot === 'gif' ? '选一段视频' : '选视频或音频'),
+      h('span', { className: 'kq-fs__title' }, pickingDir ? '选择输出文件夹' : '添加文件'),
+      h('span', { className: 'kq-fs__tag' }, pickingDir ? '成品写到这个目录' : slot === 'gif' ? '选一段视频' : '选视频或音频'),
       h('span', { style: { flex: 1 } }),
       h(GhostButton, { label: '取消', onClick: onClose })),
     h('div', { className: 'kq-fs__places' },
@@ -3416,9 +3424,34 @@ function FileDialog({ React, api, slot, onClose, onChoose }) {
       h('span', { className: 'kq-fs__hint', title: selected ? selected.path : '' },
         selected ? selected.path : '单击选中，双击直接打开；只支持本地绝对路径。'),
       h(PrimaryButton, {
-        label: '选择',
-        onClick: () => { if (selected !== null) onChoose(selected.path, selected.name) },
+        label: pickingDir ? '选择此目录' : '选择',
+        onClick: () => {
+          if (pickingDir) { if (listing) onChoose(listing.path, listing.path) }
+          else if (selected !== null) onChoose(selected.path, selected.name)
+        },
       }))))
+}
+
+
+
+
+
+
+
+
+/* ── components/OutputPicker.js ── */
+/** 输出位置：默认与源文件同目录，可点「选择」改到任意文件夹。 */
+
+
+/**
+ * @param {{ dir: string, onChoose: Function }} props
+ */
+function OutputPicker({ dir, onChoose }) {
+  const text = typeof dir === 'string' && dir !== '' ? dir : '与源文件同目录'
+  return h('div', { className: 'kq-output' },
+    h('span', { className: 'kq-output__label' }, '输出位置'),
+    h('span', { className: 'kq-output__path', title: text }, text),
+    h(GhostButton, { label: '选择', onClick: onChoose, ariaLabel: '选择输出文件夹' }))
 }
 
 
@@ -3972,6 +4005,8 @@ function ConvertScreen(props) {
         : null,
       h(CopyToggle, { copy: model.copy, onChange: props.onCopyToggle }),
       h('p', { className: 'kq-hint' }, model.hint)),
+    h(Section, { label: '输出' },
+      h(OutputPicker, { dir: props.outputDir, onChoose: props.onChooseOutput })),
     model.error
       ? h('p', { className: 'kq-error', role: 'alert' }, `${model.error.message}${model.error.hint ? ` ${model.error.hint}` : ''}`)
       : null,
@@ -3986,6 +4021,8 @@ function ConvertScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
+
 
 
 /* ── screens/GifScreen.js ── */
@@ -4028,6 +4065,8 @@ function GifScreen(props) {
       })),
     h(Section, { label: '参数' },
       h(GifFields, { fields: model.fields, onChange: props.onField })),
+    h(Section, { label: '输出' },
+      h(OutputPicker, { dir: props.outputDir, onChoose: props.onChooseOutput })),
     h('p', { className: 'kq-note kq-note--line' }, model.note),
     model.warnings.map((warning) => h('p', { key: warning, className: 'kq-hint' }, warning)),
     model.error
@@ -4044,6 +4083,8 @@ function GifScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
+
 
 
 /* ── screens/ResultsPanel.js ── */
@@ -4099,6 +4140,10 @@ function createPanel(React) {
     const [, force] = React.useState(0)
     const [refreshKey, setRefreshKey] = React.useState(0)
     const [dialogSlot, setDialogSlot] = React.useState(null)
+    const [dirDialog, setDirDialog] = React.useState(false)
+    const [outputDir, setOutputDirState] = React.useState(() => {
+      try { return window.localStorage.getItem('kumquat.outputDir') || '' } catch { return '' }
+    })
     const storeRef = React.useRef(null)
     const abortRef = React.useRef(null)
     if (storeRef.current === null) storeRef.current = createStore(reducer, initialState())
@@ -4161,6 +4206,12 @@ function createPanel(React) {
     }, [activeKey, api, store])
 
     const dispatch = store.dispatch
+    const setOutputDir = (dir) => {
+      setOutputDirState(dir)
+      try { window.localStorage.setItem('kumquat.outputDir', dir) } catch { /* ignore */ }
+      setDirDialog(false)
+    }
+
     const goHome = () => dispatch({ type: ACT.SCREEN, screen: 'home' })
     const openScreen = (screen) => dispatch({ type: ACT.SCREEN, screen })
     const retry = () => setRefreshKey((value) => value + 1)
@@ -4265,7 +4316,7 @@ function createPanel(React) {
         return
       }
       dispatch({ type: ACT.JOB_BEGIN, slot })
-      const result = await api.run(validation.task)
+      const result = await api.run(validation.task, { outputDir })
       if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task: validation.task })
       else dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
     }
@@ -4285,7 +4336,7 @@ function createPanel(React) {
       }
       const slot = nextTask.kind === 'gif' ? 'gif' : 'convert'
       dispatch({ type: ACT.JOB_BEGIN, slot })
-      const result = await api.run(nextTask)
+      const result = await api.run(nextTask, { outputDir })
       if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task: nextTask })
       else dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
     }
@@ -4329,6 +4380,8 @@ function createPanel(React) {
           onTarget: (to) => dispatch({ type: ACT.TARGET, to }),
           onCopyToggle: (checked) => dispatch({ type: ACT.COPY, copy: checked }),
           onSubmit: () => submit('convert'),
+          outputDir,
+          onChooseOutput: () => setDirDialog(true),
         })
         : null,
       state.screen === 'gif'
@@ -4345,6 +4398,8 @@ function createPanel(React) {
           onTextDone: (handle) => dispatch({ type: ACT.GIF_TEXT_DONE, handle }),
           onField: (field, value) => dispatch({ type: ACT.GIF_FIELD, field, value }),
           onSubmit: () => submit('gif'),
+          outputDir,
+          onChooseOutput: () => setDirDialog(true),
         })
         : null,
       state.screen !== 'home'
@@ -4363,6 +4418,16 @@ function createPanel(React) {
         },
       })
       : null,
+    dirDialog
+      ? h(FileDialog, {
+        React,
+        api,
+        mode: 'dir',
+        slot: 'convert',
+        onClose: () => setDirDialog(false),
+        onChoose: (path) => setOutputDir(path),
+      })
+      : null,
     h('div', { className: 'kq-foot' },
       balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone }),
       h('p', { className: 'kq-foot__note' }, '文件以本机路径登记，不上传、不复制；每次任务自动验收并留证据。')))
@@ -4370,6 +4435,13 @@ function createPanel(React) {
 
   return KumquatPanel
 }
+
+
+
+
+
+
+
 
 
 

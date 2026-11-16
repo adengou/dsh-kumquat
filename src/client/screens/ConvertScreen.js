@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 屏幕 2A · 格式转换：文件条 → 格式胶囊 → 仅换封装 → 开始转换。
  * 只有一个必答项（转成什么），其余是默认值。
  */
@@ -9,6 +9,7 @@ import { FileStrip } from '../components/FileStrip.js'
 import { FormatPills } from '../components/FormatPill.js'
 import { CopyToggle } from '../components/CopyToggle.js'
 import { PrimaryButton } from '../components/Button.js'
+import { OutputPicker } from '../components/OutputPicker.js'
 
 /**
  * @param {{
@@ -40,6 +41,8 @@ export function ConvertScreen(props) {
         : null,
       h(CopyToggle, { copy: model.copy, onChange: props.onCopyToggle }),
       h('p', { className: 'kq-hint' }, model.hint)),
+    h(Section, { label: '输出' },
+      h(OutputPicker, { dir: props.outputDir, onChoose: props.onChooseOutput })),
     model.error
       ? h('p', { className: 'kq-error', role: 'alert' }, `${model.error.message}${model.error.hint ? ` ${model.error.hint}` : ''}`)
       : null,
@@ -54,3 +57,5 @@ export function ConvertScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
+

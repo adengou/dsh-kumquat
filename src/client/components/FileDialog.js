@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 文件浏览对话框：列出目录、进入子目录、选中媒体文件后回填绝对路径。
  * 只读；不复制、不上传。桌面与 web 共用同一套实现，不依赖宿主原生对话框。
  */
@@ -24,7 +24,8 @@ function extOf(name) {
  *   onChoose: (path: string, name: string) => void,
  * }} props
  */
-export function FileDialog({ React, api, slot, onClose, onChoose }) {
+export function FileDialog({ React, api, slot, mode, onClose, onChoose }) {
+  const pickingDir = mode === 'dir'
   const [listing, setListing] = React.useState(null)
   const [pathText, setPathText] = React.useState('')
   const [selected, setSelected] = React.useState(null)
@@ -49,7 +50,7 @@ export function FileDialog({ React, api, slot, onClose, onChoose }) {
     void load('')
   }, [])
 
-  const entries = listing && Array.isArray(listing.entries) ? listing.entries : []
+  const entries = (listing && Array.isArray(listing.entries) ? listing.entries : []).filter((entry) => !pickingDir || entry.type === 'dir')
   const roots = listing && Array.isArray(listing.roots) ? listing.roots : []
   const quick = listing && Array.isArray(listing.quick) ? listing.quick : []
   const parent = listing && typeof listing.parent === 'string' ? listing.parent : ''
@@ -66,15 +67,15 @@ export function FileDialog({ React, api, slot, onClose, onChoose }) {
     className: 'kq-veil',
     role: 'dialog',
     'aria-modal': 'true',
-    'aria-label': '添加文件',
+    'aria-label': pickingDir ? '选择输出文件夹' : '添加文件',
     onClick: (event) => { if (event.target === event.currentTarget) onClose() },
     onKeyDown: (event) => { if (event.key === 'Escape') onClose() },
   },
   h('div', { className: 'kq-fs' },
     h('div', { className: 'kq-fs__head' },
       h(KqIcon, { name: 'film', size: 16 }),
-      h('span', { className: 'kq-fs__title' }, '添加文件'),
-      h('span', { className: 'kq-fs__tag' }, slot === 'gif' ? '选一段视频' : '选视频或音频'),
+      h('span', { className: 'kq-fs__title' }, pickingDir ? '选择输出文件夹' : '添加文件'),
+      h('span', { className: 'kq-fs__tag' }, pickingDir ? '成品写到这个目录' : slot === 'gif' ? '选一段视频' : '选视频或音频'),
       h('span', { style: { flex: 1 } }),
       h(GhostButton, { label: '取消', onClick: onClose })),
     h('div', { className: 'kq-fs__places' },
@@ -137,7 +138,16 @@ export function FileDialog({ React, api, slot, onClose, onChoose }) {
       h('span', { className: 'kq-fs__hint', title: selected ? selected.path : '' },
         selected ? selected.path : '单击选中，双击直接打开；只支持本地绝对路径。'),
       h(PrimaryButton, {
-        label: '选择',
-        onClick: () => { if (selected !== null) onChoose(selected.path, selected.name) },
+        label: pickingDir ? '选择此目录' : '选择',
+        onClick: () => {
+          if (pickingDir) { if (listing) onChoose(listing.path, listing.path) }
+          else if (selected !== null) onChoose(selected.path, selected.name)
+        },
       }))))
 }
+
+
+
+
+
+

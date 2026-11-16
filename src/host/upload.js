@@ -23,8 +23,11 @@ export function createUploader(options) {
   return async function upload(request, url) {
     const name = safeName(url.searchParams.get('name'))
     const dir = path.join(root, 'uploads')
-    await mkdir(dir, { recursive: true })
-    const dest = path.join(dir, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${name}`)
+    const bucket = path.join(dir, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+    await mkdir(bucket, { recursive: true })
+    // Keep the original file name as the basename so the produced file name
+    // does not inherit an upload prefix.
+    const dest = path.join(bucket, name)
 
     let size = 0
     let failed = null

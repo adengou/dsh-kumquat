@@ -424,7 +424,17 @@ export function createRouter(options) {
           const task = validateTask(body.task)
           if (!task.ok) return fail(400, HOST_CODES.INPUT, task.message, task.hint)
           const instance = await service()
-          const runOptions = typeof body.overwrite === 'boolean' ? { overwrite: body.overwrite } : undefined
+          /** @type {{ overwrite?: boolean, outputDir?: string } | undefined} */
+          let runOptions
+          if (typeof body.overwrite === 'boolean' || (typeof body.outputDir === 'string' && body.outputDir.trim() !== '')) {
+            runOptions = {}
+            if (typeof body.overwrite === 'boolean') runOptions.overwrite = body.overwrite
+            if (typeof body.outputDir === 'string' && body.outputDir.trim() !== '') {
+              const dir = validatePath(body.outputDir)
+              if (!dir.ok) return fail(400, HOST_CODES.INPUT, dir.message, dir.hint)
+              runOptions.outputDir = dir.value
+            }
+          }
           return { status: 202, body: progressTable.merge(await instance.run(task.value, runOptions)) }
         }
         case 'jobs':

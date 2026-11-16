@@ -32,6 +32,10 @@ export function createPanel(React) {
     const [, force] = React.useState(0)
     const [refreshKey, setRefreshKey] = React.useState(0)
     const [dialogSlot, setDialogSlot] = React.useState(null)
+    const [dirDialog, setDirDialog] = React.useState(false)
+    const [outputDir, setOutputDirState] = React.useState(() => {
+      try { return window.localStorage.getItem('kumquat.outputDir') || '' } catch { return '' }
+    })
     const storeRef = React.useRef(null)
     const abortRef = React.useRef(null)
     if (storeRef.current === null) storeRef.current = createStore(reducer, initialState())
@@ -94,6 +98,12 @@ export function createPanel(React) {
     }, [activeKey, api, store])
 
     const dispatch = store.dispatch
+    const setOutputDir = (dir) => {
+      setOutputDirState(dir)
+      try { window.localStorage.setItem('kumquat.outputDir', dir) } catch { /* ignore */ }
+      setDirDialog(false)
+    }
+
     const goHome = () => dispatch({ type: ACT.SCREEN, screen: 'home' })
     const openScreen = (screen) => dispatch({ type: ACT.SCREEN, screen })
     const retry = () => setRefreshKey((value) => value + 1)
@@ -198,7 +208,7 @@ export function createPanel(React) {
         return
       }
       dispatch({ type: ACT.JOB_BEGIN, slot })
-      const result = await api.run(validation.task)
+      const result = await api.run(validation.task, { outputDir })
       if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task: validation.task })
       else dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
     }
@@ -218,7 +228,7 @@ export function createPanel(React) {
       }
       const slot = nextTask.kind === 'gif' ? 'gif' : 'convert'
       dispatch({ type: ACT.JOB_BEGIN, slot })
-      const result = await api.run(nextTask)
+      const result = await api.run(nextTask, { outputDir })
       if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task: nextTask })
       else dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
     }
@@ -262,6 +272,8 @@ export function createPanel(React) {
           onTarget: (to) => dispatch({ type: ACT.TARGET, to }),
           onCopyToggle: (checked) => dispatch({ type: ACT.COPY, copy: checked }),
           onSubmit: () => submit('convert'),
+          outputDir,
+          onChooseOutput: () => setDirDialog(true),
         })
         : null,
       state.screen === 'gif'
@@ -278,6 +290,8 @@ export function createPanel(React) {
           onTextDone: (handle) => dispatch({ type: ACT.GIF_TEXT_DONE, handle }),
           onField: (field, value) => dispatch({ type: ACT.GIF_FIELD, field, value }),
           onSubmit: () => submit('gif'),
+          outputDir,
+          onChooseOutput: () => setDirDialog(true),
         })
         : null,
       state.screen !== 'home'
@@ -296,6 +310,16 @@ export function createPanel(React) {
         },
       })
       : null,
+    dirDialog
+      ? h(FileDialog, {
+        React,
+        api,
+        mode: 'dir',
+        slot: 'convert',
+        onClose: () => setDirDialog(false),
+        onChoose: (path) => setOutputDir(path),
+      })
+      : null,
     h('div', { className: 'kq-foot' },
       balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone }),
       h('p', { className: 'kq-foot__note' }, '文件以本机路径登记，不上传、不复制；每次任务自动验收并留证据。')))
@@ -303,6 +327,13 @@ export function createPanel(React) {
 
   return KumquatPanel
 }
+
+
+
+
+
+
+
 
 
 

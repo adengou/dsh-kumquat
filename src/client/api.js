@@ -287,7 +287,9 @@ export function createApi(ctx = {}) {
       if (!task || typeof task !== 'object') {
         return { ok: false, error: { code: 'E_INPUT', message: '任务不完整', hint: '检查文件与参数。' }, source: 'none' }
       }
-      return call('run', { body: { task, overwrite: Boolean(opts && opts.overwrite) } })
+      const body = { task, overwrite: Boolean(opts && opts.overwrite) }
+      if (opts && typeof opts.outputDir === 'string' && opts.outputDir !== '') body.outputDir = opts.outputDir
+      return call('run', { body })
     },
     async job(id) {
       if (typeof id !== 'string' || id === '') {
@@ -655,6 +657,7 @@ export function createFakeApi(options = {}) {
     },
   })
 }
+
 
 
 

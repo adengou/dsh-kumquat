@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 屏幕 2B · 视频做 GIF：文件条 → 时间轴选区 → 三个默认参数 → 开始生成 GIF。
  * 只有一个必答项（哪几秒）。
  */
@@ -8,6 +8,7 @@ import { Section } from '../components/Section.js'
 import { FileStrip } from '../components/FileStrip.js'
 import { TimelineRange } from '../components/TimelineRange.js'
 import { GifFields } from '../components/GifFields.js'
+import { OutputPicker } from '../components/OutputPicker.js'
 import { PrimaryButton } from '../components/Button.js'
 
 /**
@@ -43,6 +44,8 @@ export function GifScreen(props) {
       })),
     h(Section, { label: '参数' },
       h(GifFields, { fields: model.fields, onChange: props.onField })),
+    h(Section, { label: '输出' },
+      h(OutputPicker, { dir: props.outputDir, onChoose: props.onChooseOutput })),
     h('p', { className: 'kq-note kq-note--line' }, model.note),
     model.warnings.map((warning) => h('p', { key: warning, className: 'kq-hint' }, warning)),
     model.error
@@ -59,3 +62,5 @@ export function GifScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
+
