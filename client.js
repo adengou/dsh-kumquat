@@ -3058,8 +3058,8 @@ function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDraft, on
         label: '添加文件',
         onClick: onPick,
         busy: model.picking,
-        title: '用宿主目录浏览选一个文件',
-        ariaLabel: '添加文件（宿主目录浏览）',
+        title: '填写文件绝对路径',
+        ariaLabel: '添加文件（填写绝对路径）',
       }),
       h(GhostButton, {
         label: '粘贴路径',
@@ -3117,6 +3117,7 @@ function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDraft, on
           : null)
       : null)
 }
+
 
 
 /* ── components/FormatPill.js ── */
@@ -3865,21 +3866,11 @@ function createPanel(React) {
     }
 
     const pick = async (slot) => {
-      // No host-side picker in this deployment: open the path field directly
-      // instead of leaving the button looking dead.
-      if (typeof pickFile !== 'function') {
-        dispatch({ type: ACT.PASTE_OPEN, slot, open: true })
-        dispatch({ type: ACT.NOTICE, notice: '宿主未提供文件选择器，请在下方粘贴绝对路径。' })
-        return
-      }
-      dispatch({ type: ACT.FILE_BEGIN, slot })
-      const result = await requestPath(pickFile)
-      if (result.ok === true) {
-        loadFile(slot, result.path, result.name)
-        return
-      }
-      dispatch({ type: ACT.FILE_PICK_ERR, slot, error: result.error })
-      if (result.error.code === 'E_NO_PICKER' || result.error.code === 'E_PICKER') dispatch({ type: ACT.PASTE_OPEN, slot, open: true })
+      // Never depend on a host file dialog: in the desktop client `pickFile`
+      // can exist yet never resolve, which reads as a dead button. Always open
+      // the path field; it works in both clients.
+      dispatch({ type: ACT.PASTE_OPEN, slot, open: true })
+      dispatch({ type: ACT.NOTICE, notice: '粘贴文件的绝对路径后按回车，文件只登记路径，不上传、不复制。' })
     }
 
     const submitPaste = (slot) => {
@@ -4030,6 +4021,7 @@ function createPanel(React) {
 
   return KumquatPanel
 }
+
 
 
     bindHost(React)

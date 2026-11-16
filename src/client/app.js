@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Kumquat · 面板根组件与副作用编排。
  *
  * 组件只画逻辑层给的视图模型；选文件、探测、提交、轮询、取消、修复、复制、
@@ -11,7 +11,6 @@ import { h } from './h.js'
 import { ACT, createStore, initialState } from './state.js'
 import { activeJobIds, applyRepair, parsePathInput, selectBalance, selectBinary, selectCaps, selectConvert, selectGif, selectHeader, selectHome, selectResults, validateConvert, validateGif } from './logic.js'
 import { createUnavailableApi } from './api.js'
-import { requestPath } from './picker.js'
 import { copyText } from './clipboard.js'
 import { BalanceLine } from './components/BalanceLine.js'
 import { BinaryBanner } from './components/BinaryBanner.js'
@@ -111,21 +110,11 @@ export function createPanel(React) {
     }
 
     const pick = async (slot) => {
-      // No host-side picker in this deployment: open the path field directly
-      // instead of leaving the button looking dead.
-      if (typeof pickFile !== 'function') {
-        dispatch({ type: ACT.PASTE_OPEN, slot, open: true })
-        dispatch({ type: ACT.NOTICE, notice: '宿主未提供文件选择器，请在下方粘贴绝对路径。' })
-        return
-      }
-      dispatch({ type: ACT.FILE_BEGIN, slot })
-      const result = await requestPath(pickFile)
-      if (result.ok === true) {
-        loadFile(slot, result.path, result.name)
-        return
-      }
-      dispatch({ type: ACT.FILE_PICK_ERR, slot, error: result.error })
-      if (result.error.code === 'E_NO_PICKER' || result.error.code === 'E_PICKER') dispatch({ type: ACT.PASTE_OPEN, slot, open: true })
+      // Never depend on a host file dialog: in the desktop client `pickFile`
+      // can exist yet never resolve, which reads as a dead button. Always open
+      // the path field; it works in both clients.
+      dispatch({ type: ACT.PASTE_OPEN, slot, open: true })
+      dispatch({ type: ACT.NOTICE, notice: '粘贴文件的绝对路径后按回车，文件只登记路径，不上传、不复制。' })
     }
 
     const submitPaste = (slot) => {
@@ -276,3 +265,4 @@ export function createPanel(React) {
 
   return KumquatPanel
 }
+

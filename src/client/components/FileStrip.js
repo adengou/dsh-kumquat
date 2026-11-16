@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 文件条：两个入口「添加文件」（宿主目录浏览）与「粘贴路径」（手填绝对路径）。
  * 没有拖拽；文件只登记绝对路径，不上传、不复制。
  */
@@ -33,8 +33,8 @@ export function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDr
         label: '添加文件',
         onClick: onPick,
         busy: model.picking,
-        title: '用宿主目录浏览选一个文件',
-        ariaLabel: '添加文件（宿主目录浏览）',
+        title: '填写文件绝对路径',
+        ariaLabel: '添加文件（填写绝对路径）',
       }),
       h(GhostButton, {
         label: '粘贴路径',
@@ -92,3 +92,4 @@ export function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDr
           : null)
       : null)
 }
+
