@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Kumquat",
-    "description": "Converts a video or audio file to another container, or cuts a few seconds of video into a looping GIF, and verifies every output: what was expected, what was measured, how far off it is, and how to fix it. Open the Kumquat panel, pick a task, pick a file, and read the result under the form. No fonts are bundled; the panel uses the system font stack. When FFmpeg is missing the plugin can download an official build for the platform, or you can set ffmpegPath or turn autoDownload off. It makes no network request except the DeepSeek balance query.",
+    "description": "Converts a video or audio file to another container, or cuts a few seconds of video into a looping GIF, and verifies every output: what was expected, what was measured, how far off it is, and how to fix it. Open the Kumquat panel, pick a task, pick a file, and read the result under the form. No fonts are bundled; the panel uses the system font stack. When FFmpeg is missing the plugin can download an official build for the platform, or you can set ffmpegPath or turn autoDownload off. No telemetry. Network is used only for the optional balance query and for downloading FFmpeg when none is installed.",
     "detail": "docs/DETAIL.en.md"
   }
 }
