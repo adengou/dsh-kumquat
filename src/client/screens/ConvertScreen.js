@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 屏幕 2A · 格式转换：文件条 → 格式胶囊 → 仅换封装 → 开始转换。
  * 只有一个必答项（转成什么），其余是默认值。
  */
@@ -10,6 +10,7 @@ import { FormatPills } from '../components/FormatPill.js'
 import { CopyToggle } from '../components/CopyToggle.js'
 import { PrimaryButton } from '../components/Button.js'
 import { OutputPicker } from '../components/OutputPicker.js'
+import { TrimFields } from '../components/TrimFields.js'
 
 /**
  * @param {{
@@ -33,6 +34,13 @@ export function ConvertScreen(props) {
         onDraft: props.onDraft,
         onSubmitPaste: props.onSubmitPaste,
         onClear: props.onClearFile,
+      })),
+    model.showTrim === false || model.trim === undefined
+      ? null
+      : h(Section, { label: '裁剪' }, h(TrimFields, {
+        trim: model.trim,
+        onToggle: props.onTrimToggle,
+        onText: props.onTrimText,
       })),
     h(Section, { label: '转成' },
       h(FormatPills, { targets: model.targets, value: null, onChange: props.onTarget }),
@@ -58,6 +66,8 @@ export function ConvertScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
+
 
 
 

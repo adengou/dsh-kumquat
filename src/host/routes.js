@@ -41,7 +41,7 @@ import { revealPath } from './reveal.js'
 export const ROUTE_PREFIX = '/api/kumquat'
 
 /** Output containers the product accepts for a convert task. */
-export const CONTAINERS = Object.freeze(['mp4', 'mkv', 'mov', 'webm', 'avi', 'mp3', 'm4a', 'wav', 'flac'])
+export const CONTAINERS = Object.freeze(['mp4', 'mkv', 'mov', 'webm', 'avi', 'mp3', 'm4a', 'wav', 'flac', 'aac', 'ogg', 'opus', 'wma'])
 
 /** Bounds applied to every user-supplied value. */
 export const LIMITS = Object.freeze({
@@ -183,6 +183,14 @@ export function validateTask(value) {
     /** @type {import('../public/types.d.ts').ConvertTask} */
     const task = { kind: 'convert', input: input.value, to }
     if (typeof raw.copy === 'boolean') task.copy = raw.copy
+    if (isPlainObject(raw.trim)) {
+      const from = bounded(raw.trim.from, 0, 86_400, false)
+      const to = bounded(raw.trim.to, 0, 86_400, false)
+      if (from === undefined || to === undefined || to <= from) {
+        return { ok: false, message: '裁剪区间不合法', hint: 'trim.from / trim.to 是秒数，且终点要晚于起点。' }
+      }
+      task.trim = { from, to }
+    }
     return { ok: true, value: task }
   }
 

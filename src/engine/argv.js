@@ -9,6 +9,7 @@
  * route produced byte-identical output for the same segment, see design.md).
  */
 import path from 'node:path'
+import { normalizeTrim } from './trim.js'
 import { hasEncoder, hasMuxer } from './capability.js'
 
 /** @typedef {import('../public/types.d.ts').MediaFacts} MediaFacts */
@@ -234,16 +235,17 @@ export function buildConvert(task, facts, caps) {
     )
   }
 
+  const trim = normalizeTrim(task.trim, facts.durationSec)
   const decision = decideCopy(task, facts, target)
   const outputPath = convertOutputPath(input, target.container)
 
   if (decision.copy) {
     return {
-      argv: buildCopyArgv(caps.ffmpeg, input, facts, target, outputPath, decision.subtitles),
+      argv: buildCopyArgv(caps.ffmpeg, input, facts, target, outputPath, decision.subtitles, trim),
       copy: true,
       reason: decision.reason,
       outputPath,
-      spec: buildSpec(facts, target, { copy: true }),
+      spec: buildSpec(facts, target, { copy: true }, trim),
     }
   }
 
@@ -251,11 +253,11 @@ export function buildConvert(task, facts, caps) {
   const audioEncoder = facts.audio ? pickEncoder(target.container, 'audio', caps) : null
 
   return {
-    argv: buildEncodeArgv(caps.ffmpeg, input, facts, target, outputPath, videoEncoder, audioEncoder),
+    argv: buildEncodeArgv(caps.ffmpeg, input, facts, target, outputPath, videoEncoder, audioEncoder, trim),
     copy: false,
     reason: decision.reason,
     outputPath,
-    spec: buildSpec(facts, target, { copy: false, videoEncoder, audioEncoder }),
+    spec: buildSpec(facts, target, { copy: false, videoEncoder, audioEncoder }, trim),
   }
 }
 
@@ -378,6 +380,9 @@ function normalizeTarget(raw) {
  * @returns {{ copy: boolean, reason: string, subtitles: import('../public/types.d.ts').StreamInfo[] }}
  */
 function decideCopy(task, facts, target) {
+  if (task.trim !== undefined && task.trim !== null) {
+    return { copy: false, reason: 're-encode: trim needs an accurate cut', subtitles: [] }
+  }
   if (task.copy === false) {
     return { copy: false, reason: 're-encode: copy disabled by task', subtitles: [] }
   }
@@ -434,8 +439,8 @@ function decideCopy(task, facts, target) {
  * @param {string} outputPath
  * @param {import('../public/types.d.ts').StreamInfo[]} subtitles
  */
-function buildCopyArgv(ffmpeg, input, facts, target, outputPath, subtitles) {
-  const argv = baseArgs(ffmpeg, input)
+function buildCopyArgv(ffmpeg, input, facts, target, outputPath, subtitles, trim) {
+  const argv = baseArgs(ffmpeg, input, trim)
 
   if (target.kind === 'audio') {
     argv.push('-map', '0:a:0?', '-vn')
@@ -458,8 +463,8 @@ function buildCopyArgv(ffmpeg, input, facts, target, outputPath, subtitles) {
  * @param {{ args: string[] } | null} videoEncoder
  * @param {{ args: string[] } | null} audioEncoder
  */
-function buildEncodeArgv(ffmpeg, input, facts, target, outputPath, videoEncoder, audioEncoder) {
-  const argv = baseArgs(ffmpeg, input)
+function buildEncodeArgv(ffmpeg, input, facts, target, outputPath, videoEncoder, audioEncoder, trim) {
+  const argv = baseArgs(ffmpeg, input, trim)
 
   if (target.kind === 'audio') {
     argv.push('-map', '0:a:0?', '-vn')
@@ -478,8 +483,10 @@ function buildEncodeArgv(ffmpeg, input, facts, target, outputPath, videoEncoder,
 }
 
 /** @param {string} ffmpeg @param {string} input */
-function baseArgs(ffmpeg, input) {
-  return [ffmpeg, '-hide_banner', '-nostdin', '-y', '-progress', 'pipe:1', '-nostats', '-i', input]
+function baseArgs(ffmpeg, input, trim) {
+  const argv = [ffmpeg, '-hide_banner', '-nostdin', '-y', '-progress', 'pipe:1', '-nostats', '-i', input]
+  if (trim) argv.push('-t', formatSeconds(trim.duration))
+  return argv
 }
 
 /**
@@ -488,11 +495,11 @@ function baseArgs(ffmpeg, input) {
  * @param {{ copy: boolean, videoEncoder?: { codec: string } | null, audioEncoder?: { codec: string } | null }} chosen
  * @returns {MediaSpec}
  */
-function buildSpec(facts, target, chosen) {
+function buildSpec(facts, target, chosen, trim) {
   /** @type {MediaSpec} */
   const spec = {
     container: target.container,
-    durationSec: { expect: facts.durationSec, toleranceSec: 0.2 },
+    durationSec: { expect: trim ? trim.duration : facts.durationSec, toleranceSec: 0.2 },
     decodable: 'sample',
   }
 

@@ -118,6 +118,9 @@ export const CSS_TEXT = `
   border-radius:var(--kq-r-md);padding:12px;margin-top:2px}
 
 /* ── 文件浏览对话框 ─────────────────────────────────── */
+.kq-trim{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:6px}
+.kq-trim__row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.kq-trim__field{width:120px}
 .kq-output{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:var(--kq-fs-2);color:var(--kq-muted)}
 .kq-output__label{flex:none;color:var(--kq-dim)}
 .kq-output__path{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--kq-text)}

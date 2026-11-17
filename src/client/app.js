@@ -239,20 +239,24 @@ export function createPanel(React) {
     const pick = async (slot) => {
       // The hidden file input opens the OS dialog in both clients. Desktop can
       // return a real path; the web client uploads the chosen bytes to the Host.
-      const chosen = await chooseLocalFile()
+      const chosen = await chooseLocalFile(slot === 'convert')
       if (!chosen.ok) return
-      if (chosen.path !== '') {
-        loadFile(slot, chosen.path, chosen.name)
-        return
+      const loaded = []
+      for (const item of chosen.files) {
+        if (item.path !== '') {
+          loaded.push({ path: item.path, name: item.name })
+          continue
+        }
+        dispatch({ type: ACT.NOTICE, notice: '正在把所选文件复制到本机临时目录…' })
+        const uploaded = await uploadFile(item.file)
+        if (uploaded.ok) loaded.push({ path: uploaded.path, name: uploaded.name })
       }
-      dispatch({ type: ACT.NOTICE, notice: '正在把所选文件复制到本机临时目录…' })
-      const uploaded = await uploadFile(chosen.file)
-      if (uploaded.ok) {
-        loadFile(slot, uploaded.path, uploaded.name)
-        return
+      if (loaded.length === 0) return
+      if (slot === 'convert') dispatch({ type: ACT.BATCH_SET, files: loaded })
+      loadFile(slot, loaded[0].path, loaded[0].name)
+      if (loaded.length > 1) {
+        dispatch({ type: ACT.NOTICE, notice: `已选 ${loaded.length} 个文件，按同一格式依次转换。` })
       }
-      dispatch({ type: ACT.NOTICE, notice: uploaded.error.message })
-      setDialogSlot(slot)
     }
 
     const submitPaste = (slot) => {
@@ -310,9 +314,18 @@ export function createPanel(React) {
         return
       }
       dispatch({ type: ACT.JOB_BEGIN, slot })
-      const result = await api.run(validation.task, { outputDir, outputPath })
-      if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task: validation.task })
-      else dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
+      const batch = current.convert.batch
+      const tasks = slot === 'convert' && batch.length > 1
+        ? batch.map((item) => ({ ...validation.task, input: item.path }))
+        : [validation.task]
+      for (const task of tasks) {
+        const result = await api.run(task, { outputDir, outputPath: tasks.length === 1 ? outputPath : '' })
+        if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task })
+        else {
+          dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
+          break
+        }
+      }
     }
 
     const cancelJob = async (id) => {
@@ -403,13 +416,15 @@ export function createPanel(React) {
           onClosePaste: () => dispatch({ type: ACT.PASTE_OPEN, slot: 'convert', open: false }),
           onDraft: (value) => dispatch({ type: ACT.PASTE_DRAFT, slot: 'convert', draft: value }),
           onSubmitPaste: () => submitPaste('convert'),
-          onClearFile: () => dispatch({ type: ACT.FILE_CLEAR, slot: 'convert' }),
+          onClearFile: () => { dispatch({ type: ACT.FILE_CLEAR, slot: 'convert' }); dispatch({ type: ACT.BATCH_SET, files: [] }) },
           onTarget: (to) => dispatch({ type: ACT.TARGET, to }),
           onCopyToggle: (checked) => dispatch({ type: ACT.COPY, copy: checked }),
           onSubmit: () => submit('convert'),
           outputDir,
           outputPath,
           onChooseOutput: chooseOutputDir,
+          onTrimToggle: (enabled) => dispatch({ type: ACT.TRIM_TOGGLE, enabled }),
+          onTrimText: (field, value) => dispatch({ type: ACT.TRIM_TEXT, field, value }),
         })
         : null,
       state.screen === 'gif'
@@ -429,6 +444,8 @@ export function createPanel(React) {
           outputDir,
           outputPath,
           onChooseOutput: chooseOutputDir,
+          onTrimToggle: (enabled) => dispatch({ type: ACT.TRIM_TOGGLE, enabled }),
+          onTrimText: (field, value) => dispatch({ type: ACT.TRIM_TEXT, field, value }),
         })
         : null,
       state.screen !== 'home'

@@ -46,6 +46,8 @@ export type ConvertTask = {
   to: string
   /** Try stream copy first. Defaults to true; the engine downgrades with a reason. */
   copy?: boolean
+  /** Optional segment to convert; forces a re-encode for an accurate cut. */
+  trim?: TrimRange
 }
 
 export type GifTask = {

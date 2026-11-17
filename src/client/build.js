@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
  * Kumquat · 把 src/client 下的 ESM 源码装配成宿主能吃的 client.js。
  *
@@ -46,6 +46,7 @@ const MODULES = [
   'components/FileStrip.js',
   'components/FileDialog.js',
   'components/OutputPicker.js',
+  'components/TrimFields.js',
   'components/FormatPill.js',
   'components/CopyToggle.js',
   'components/TimelineRange.js',
@@ -287,6 +288,7 @@ ${body}
 }
 
 main()
+
 
 
 

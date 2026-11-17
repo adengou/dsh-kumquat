@@ -95,5 +95,8 @@ export function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDr
           'aria-label': `移除文件 ${file.name}`,
           title: '移除',
         }, h(KqIcon, { name: 'close', size: 14 })))
-      : h('p', { className: 'kq-hint' }, '还没有文件。桌面端直接从系统对话框选，网页端会复制到本机临时目录后处理。'))
+      : h('p', { className: 'kq-hint' }, '还没有文件。桌面端直接从系统对话框选，网页端会复制到本机临时目录后处理。'),
+    model.batchCount > 1
+      ? h('p', { className: 'kq-hint' }, '批量：共 ' + model.batchCount + ' 个文件，按同一格式依次转换。')
+      : null)
 }

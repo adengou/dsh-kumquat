@@ -601,6 +601,28 @@ export function selectConvert(state) {
   const convert = state.convert
   const file = convert.file
   const audioMode = state.screen === 'audio'
+  const trimState = convert.trim || { enabled: false, fromText: '00:00.0', toText: '' }
+  const trimDuration = plan.facts && Number.isFinite(plan.facts.durationSec) ? plan.facts.durationSec : 0
+  const trimFrom = parseClock(trimState.fromText) ?? 0
+  const trimTo = trimState.toText === '' ? trimDuration : (parseClock(trimState.toText) ?? 0)
+  let trimError = null
+  if (trimState.enabled === true) {
+    if (parseClock(trimState.fromText) === null) trimError = '起点格式不对，用 00:05.0'
+    else if (trimState.toText !== '' && parseClock(trimState.toText) === null) trimError = '终点格式不对，用 00:10.0'
+    else if (trimTo <= trimFrom) trimError = '终点要大于起点'
+    else if (trimDuration > 0 && trimTo > trimDuration + 0.5) trimError = '终点超出原片时长'
+  }
+  const trim = {
+    enabled: trimState.enabled === true,
+    fromText: trimState.fromText,
+    toText: trimState.toText,
+    from: trimFrom,
+    to: trimTo,
+    duration: trimDuration,
+    maxText: trimDuration > 0 ? formatClock(trimDuration) : '原片时长未知',
+    error: trimError,
+  }
+  const batch = Array.isArray(convert.batch) ? convert.batch : []
   const targets = CONVERT_TARGETS.filter((target) => !audioMode || target.kind === 'audio').map((target) => {
     const supported = muxerSupports(caps.data, target.ext)
     return {
@@ -652,6 +674,10 @@ export function selectConvert(state) {
     copy,
     hint: audioMode ? '只处理声音，不保留画面。' : '想只要声音，直接选 MP3。',
     showCopy: !audioMode,
+    showTrim: !audioMode,
+    trim,
+    batch,
+    batchCount: batch.length,
     etaSec,
     etaText: etaSec === null ? '' : `预计 ${etaSec} 秒`,
     canSubmit: validation.ok === true,
@@ -771,6 +797,17 @@ export function validateConvert(state) {
       hint: '换一个目标格式试试。',
       field: 'target',
     }
+  }
+  const trimState = state.convert.trim
+  if (state.screen !== 'audio' && trimState && trimState.enabled === true) {
+    const from = parseClock(trimState.fromText)
+    const facts = plan.facts
+    const known = facts && Number.isFinite(facts.durationSec) ? facts.durationSec : 0
+    const to = trimState.toText === '' ? known : parseClock(trimState.toText)
+    if (from === null) return { ok: false, code: 'E_TRIM', short: '起点格式不对', message: '起点格式不对', hint: '用 00:05.0 这样的时间。', field: 'trim' }
+    if (to === null || to <= from) return { ok: false, code: 'E_TRIM', short: '终点要大于起点', message: '裁剪终点必须大于起点', hint: '改一下起止时间。', field: 'trim' }
+    if (known > 0 && to > known + 0.5) return { ok: false, code: 'E_TRIM', short: '终点超出原片', message: '裁剪终点超出原片时长', hint: '原片 ' + formatClock(known) + '。', field: 'trim' }
+    return { ok: true, task: { ...plan.task, copy: false, trim: { from, to } }, etaSec: plan.etaSec }
   }
   return { ok: true, task: plan.task, etaSec: plan.etaSec }
 }
@@ -1367,6 +1404,12 @@ export function reducer(state, action) {
       return { ...state, convert: { ...state.convert, to: normalizeTarget(action.to) } }
     case ACT.COPY:
       return { ...state, convert: { ...state.convert, copy: action.copy === true } }
+    case ACT.TRIM_TOGGLE:
+      return { ...state, convert: { ...state.convert, trim: { ...state.convert.trim, enabled: action.enabled === true } } }
+    case ACT.TRIM_TEXT:
+      return { ...state, convert: { ...state.convert, trim: { ...state.convert.trim, [action.field]: typeof action.value === 'string' ? action.value : '' } } }
+    case ACT.BATCH_SET:
+      return { ...state, convert: { ...state.convert, batch: Array.isArray(action.files) ? action.files : [] } }
     case ACT.GIF_SLIDER:
       return applyGifSlider(state, action.handle, action.value)
     case ACT.GIF_TEXT:

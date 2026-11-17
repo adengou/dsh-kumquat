@@ -270,6 +270,9 @@ const ACT = Object.freeze({
   PASTE_ERR: 'file/paste-error',
   TARGET: 'convert/target',
   COPY: 'convert/copy',
+  TRIM_TOGGLE: 'convert/trim-toggle',
+  TRIM_TEXT: 'convert/trim-text',
+  BATCH_SET: 'convert/batch',
   GIF_SLIDER: 'gif/slider',
   GIF_TEXT: 'gif/text',
   GIF_TEXT_DONE: 'gif/text-done',
@@ -332,6 +335,8 @@ function initialState() {
       paste: { open: false, draft: '', error: null },
       to: null,
       copy: true,
+      trim: { enabled: false, fromText: '00:00.0', toText: '' },
+      batch: [],
       busy: false,
       error: null,
     },
@@ -975,6 +980,28 @@ function selectConvert(state) {
   const convert = state.convert
   const file = convert.file
   const audioMode = state.screen === 'audio'
+  const trimState = convert.trim || { enabled: false, fromText: '00:00.0', toText: '' }
+  const trimDuration = plan.facts && Number.isFinite(plan.facts.durationSec) ? plan.facts.durationSec : 0
+  const trimFrom = parseClock(trimState.fromText) ?? 0
+  const trimTo = trimState.toText === '' ? trimDuration : (parseClock(trimState.toText) ?? 0)
+  let trimError = null
+  if (trimState.enabled === true) {
+    if (parseClock(trimState.fromText) === null) trimError = '起点格式不对，用 00:05.0'
+    else if (trimState.toText !== '' && parseClock(trimState.toText) === null) trimError = '终点格式不对，用 00:10.0'
+    else if (trimTo <= trimFrom) trimError = '终点要大于起点'
+    else if (trimDuration > 0 && trimTo > trimDuration + 0.5) trimError = '终点超出原片时长'
+  }
+  const trim = {
+    enabled: trimState.enabled === true,
+    fromText: trimState.fromText,
+    toText: trimState.toText,
+    from: trimFrom,
+    to: trimTo,
+    duration: trimDuration,
+    maxText: trimDuration > 0 ? formatClock(trimDuration) : '原片时长未知',
+    error: trimError,
+  }
+  const batch = Array.isArray(convert.batch) ? convert.batch : []
   const targets = CONVERT_TARGETS.filter((target) => !audioMode || target.kind === 'audio').map((target) => {
     const supported = muxerSupports(caps.data, target.ext)
     return {
@@ -1026,6 +1053,10 @@ function selectConvert(state) {
     copy,
     hint: audioMode ? '只处理声音，不保留画面。' : '想只要声音，直接选 MP3。',
     showCopy: !audioMode,
+    showTrim: !audioMode,
+    trim,
+    batch,
+    batchCount: batch.length,
     etaSec,
     etaText: etaSec === null ? '' : `预计 ${etaSec} 秒`,
     canSubmit: validation.ok === true,
@@ -1145,6 +1176,17 @@ function validateConvert(state) {
       hint: '换一个目标格式试试。',
       field: 'target',
     }
+  }
+  const trimState = state.convert.trim
+  if (state.screen !== 'audio' && trimState && trimState.enabled === true) {
+    const from = parseClock(trimState.fromText)
+    const facts = plan.facts
+    const known = facts && Number.isFinite(facts.durationSec) ? facts.durationSec : 0
+    const to = trimState.toText === '' ? known : parseClock(trimState.toText)
+    if (from === null) return { ok: false, code: 'E_TRIM', short: '起点格式不对', message: '起点格式不对', hint: '用 00:05.0 这样的时间。', field: 'trim' }
+    if (to === null || to <= from) return { ok: false, code: 'E_TRIM', short: '终点要大于起点', message: '裁剪终点必须大于起点', hint: '改一下起止时间。', field: 'trim' }
+    if (known > 0 && to > known + 0.5) return { ok: false, code: 'E_TRIM', short: '终点超出原片', message: '裁剪终点超出原片时长', hint: '原片 ' + formatClock(known) + '。', field: 'trim' }
+    return { ok: true, task: { ...plan.task, copy: false, trim: { from, to } }, etaSec: plan.etaSec }
   }
   return { ok: true, task: plan.task, etaSec: plan.etaSec }
 }
@@ -1741,6 +1783,12 @@ function reducer(state, action) {
       return { ...state, convert: { ...state.convert, to: normalizeTarget(action.to) } }
     case ACT.COPY:
       return { ...state, convert: { ...state.convert, copy: action.copy === true } }
+    case ACT.TRIM_TOGGLE:
+      return { ...state, convert: { ...state.convert, trim: { ...state.convert.trim, enabled: action.enabled === true } } }
+    case ACT.TRIM_TEXT:
+      return { ...state, convert: { ...state.convert, trim: { ...state.convert.trim, [action.field]: typeof action.value === 'string' ? action.value : '' } } }
+    case ACT.BATCH_SET:
+      return { ...state, convert: { ...state.convert, batch: Array.isArray(action.files) ? action.files : [] } }
     case ACT.GIF_SLIDER:
       return applyGifSlider(state, action.handle, action.value)
     case ACT.GIF_TEXT:
@@ -2645,8 +2693,9 @@ async function requestPath(pickFile) {
 
 /* ── pickfile.js ── */
 /**
- * 系统文件选择：用隐藏的 <input type="file"> 打开原生对话框。
+ * 系统文件选择：隐藏的 <input type="file"> 打开原生对话框。
  * 桌面端尽量取回真实绝对路径；网页端拿不到路径，就把文件交给宿主写入临时目录。
+ * `multiple` 只给批量转换用。
  */
 
 /** @param {File} file */
@@ -2669,9 +2718,10 @@ function electronPath(file) {
 }
 
 /**
- * @returns {Promise<{ ok: true, file: File, name: string, path: string } | { ok: false, reason: 'cancel' }>}
+ * @param {boolean} [multiple]
+ * @returns {Promise<{ ok: true, files: Array<{ file: File, name: string, path: string }> } | { ok: false, reason: 'cancel' }>}
  */
-function chooseLocalFile() {
+function chooseLocalFile(multiple) {
   return new Promise((resolve) => {
     if (typeof document === 'undefined') {
       resolve({ ok: false, reason: 'cancel' })
@@ -2680,6 +2730,7 @@ function chooseLocalFile() {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'video/*,audio/*,.mkv,.flac,.m4a,.wav,.webm,.vdat,.sdv'
+    if (multiple === true) input.multiple = true
     input.style.position = 'fixed'
     input.style.left = '-9999px'
     document.body.appendChild(input)
@@ -2688,12 +2739,15 @@ function chooseLocalFile() {
       resolve(value)
     }
     input.addEventListener('change', () => {
-      const file = input.files && input.files[0]
-      if (!file) {
+      const picked = input.files ? Array.from(input.files) : []
+      if (picked.length === 0) {
         done({ ok: false, reason: 'cancel' })
         return
       }
-      done({ ok: true, file, name: file.name, path: electronPath(file) })
+      done({
+        ok: true,
+        files: picked.map((file) => ({ file, name: file.name, path: electronPath(file) })),
+      })
     })
     input.addEventListener('cancel', () => done({ ok: false, reason: 'cancel' }))
     input.click()
@@ -2855,6 +2909,9 @@ const CSS_TEXT = `
   border-radius:var(--kq-r-md);padding:12px;margin-top:2px}
 
 /* ── 文件浏览对话框 ─────────────────────────────────── */
+.kq-trim{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:6px}
+.kq-trim__row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.kq-trim__field{width:120px}
 .kq-output{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:var(--kq-fs-2);color:var(--kq-muted)}
 .kq-output__label{flex:none;color:var(--kq-dim)}
 .kq-output__path{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--kq-text)}
@@ -3330,7 +3387,10 @@ function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDraft, on
           'aria-label': `移除文件 ${file.name}`,
           title: '移除',
         }, h(KqIcon, { name: 'close', size: 14 })))
-      : h('p', { className: 'kq-hint' }, '还没有文件。桌面端直接从系统对话框选，网页端会复制到本机临时目录后处理。'))
+      : h('p', { className: 'kq-hint' }, '还没有文件。桌面端直接从系统对话框选，网页端会复制到本机临时目录后处理。'),
+    model.batchCount > 1
+      ? h('p', { className: 'kq-hint' }, '批量：共 ' + model.batchCount + ' 个文件，按同一格式依次转换。')
+      : null)
 }
 
 
@@ -3500,6 +3560,60 @@ function OutputPicker({ dir, onChoose }) {
     h('span', { className: 'kq-output__label' }, '输出位置'),
     h('span', { className: 'kq-output__path', title: text }, text),
     h(GhostButton, { label: '选择', onClick: onChoose, ariaLabel: '选择输出文件夹' }))
+}
+
+
+/* ── components/TrimFields.js ── */
+/** 裁剪片段：默认关闭；开启后按 起/止 时间只转中间一段。 */
+
+
+/**
+ * @param {{
+ *   trim: { enabled: boolean, fromText: string, toText: string, maxText: string, error: string | null },
+ *   onToggle: (enabled: boolean) => void,
+ *   onText: (field: 'fromText' | 'toText', value: string) => void,
+ * }} props
+ */
+function TrimFields({ trim, onToggle, onText }) {
+  const enabled = trim.enabled === true
+  return h('div', { className: 'kq-trim' },
+    h('button', {
+      type: 'button',
+      role: 'checkbox',
+      'aria-checked': enabled ? 'true' : 'false',
+      'aria-label': '裁剪片段',
+      className: cx('kq-check', enabled && 'is-on'),
+      onClick: () => onToggle(!enabled),
+    },
+    h('span', { className: 'kq-check__box', 'aria-hidden': 'true' },
+      enabled ? h(KqIcon, { name: 'check', size: 10 }) : null),
+    h('span', { className: 'kq-check__label' }, '裁剪片段')),
+    enabled
+      ? h('div', { className: 'kq-trim__row' },
+        h('label', { className: 'kq-field kq-trim__field' },
+          h('span', { className: 'kq-field__label' }, '起'),
+          h('input', {
+            type: 'text',
+            className: 'kq-input',
+            value: trim.fromText,
+            spellCheck: 'false',
+            autoComplete: 'off',
+            onChange: (event) => onText('fromText', event.target.value),
+          })),
+        h('label', { className: 'kq-field kq-trim__field' },
+          h('span', { className: 'kq-field__label' }, '止'),
+          h('input', {
+            type: 'text',
+            className: 'kq-input',
+            value: trim.toText,
+            placeholder: trim.maxText,
+            spellCheck: 'false',
+            autoComplete: 'off',
+            onChange: (event) => onText('toText', event.target.value),
+          })),
+        h('span', { className: 'kq-hint' }, '原片 ' + trim.maxText + '；留空表示到结尾。'))
+      : h('p', { className: 'kq-hint' }, '不裁剪，整段转换。'),
+    trim.error ? h('p', { className: 'kq-error', role: 'alert' }, trim.error) : null)
 }
 
 
@@ -4046,6 +4160,13 @@ function ConvertScreen(props) {
         onSubmitPaste: props.onSubmitPaste,
         onClear: props.onClearFile,
       })),
+    model.showTrim === false || model.trim === undefined
+      ? null
+      : h(Section, { label: '裁剪' }, h(TrimFields, {
+        trim: model.trim,
+        onToggle: props.onTrimToggle,
+        onText: props.onTrimText,
+      })),
     h(Section, { label: '转成' },
       h(FormatPills, { targets: model.targets, value: null, onChange: props.onTarget }),
       model.disabledTargets.length > 0
@@ -4070,6 +4191,8 @@ function ConvertScreen(props) {
       }),
       h('span', { className: 'kq-eta' }, blockedHint)))
 }
+
+
 
 
 
@@ -4182,7 +4305,7 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal })
  * @param {{ useState: Function, useEffect: Function, useRef: Function }} React
  */
 
-const KQ_VERSION = '0.0.34'
+const KQ_VERSION = '0.0.35'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {
@@ -4399,20 +4522,24 @@ function createPanel(React) {
     const pick = async (slot) => {
       // The hidden file input opens the OS dialog in both clients. Desktop can
       // return a real path; the web client uploads the chosen bytes to the Host.
-      const chosen = await chooseLocalFile()
+      const chosen = await chooseLocalFile(slot === 'convert')
       if (!chosen.ok) return
-      if (chosen.path !== '') {
-        loadFile(slot, chosen.path, chosen.name)
-        return
+      const loaded = []
+      for (const item of chosen.files) {
+        if (item.path !== '') {
+          loaded.push({ path: item.path, name: item.name })
+          continue
+        }
+        dispatch({ type: ACT.NOTICE, notice: '正在把所选文件复制到本机临时目录…' })
+        const uploaded = await uploadFile(item.file)
+        if (uploaded.ok) loaded.push({ path: uploaded.path, name: uploaded.name })
       }
-      dispatch({ type: ACT.NOTICE, notice: '正在把所选文件复制到本机临时目录…' })
-      const uploaded = await uploadFile(chosen.file)
-      if (uploaded.ok) {
-        loadFile(slot, uploaded.path, uploaded.name)
-        return
+      if (loaded.length === 0) return
+      if (slot === 'convert') dispatch({ type: ACT.BATCH_SET, files: loaded })
+      loadFile(slot, loaded[0].path, loaded[0].name)
+      if (loaded.length > 1) {
+        dispatch({ type: ACT.NOTICE, notice: `已选 ${loaded.length} 个文件，按同一格式依次转换。` })
       }
-      dispatch({ type: ACT.NOTICE, notice: uploaded.error.message })
-      setDialogSlot(slot)
     }
 
     const submitPaste = (slot) => {
@@ -4470,9 +4597,18 @@ function createPanel(React) {
         return
       }
       dispatch({ type: ACT.JOB_BEGIN, slot })
-      const result = await api.run(validation.task, { outputDir, outputPath })
-      if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task: validation.task })
-      else dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
+      const batch = current.convert.batch
+      const tasks = slot === 'convert' && batch.length > 1
+        ? batch.map((item) => ({ ...validation.task, input: item.path }))
+        : [validation.task]
+      for (const task of tasks) {
+        const result = await api.run(task, { outputDir, outputPath: tasks.length === 1 ? outputPath : '' })
+        if (result.ok) dispatch({ type: ACT.JOB_ADD, slot, job: result.data, task })
+        else {
+          dispatch({ type: ACT.JOB_ERR, slot, error: result.error })
+          break
+        }
+      }
     }
 
     const cancelJob = async (id) => {
@@ -4563,13 +4699,15 @@ function createPanel(React) {
           onClosePaste: () => dispatch({ type: ACT.PASTE_OPEN, slot: 'convert', open: false }),
           onDraft: (value) => dispatch({ type: ACT.PASTE_DRAFT, slot: 'convert', draft: value }),
           onSubmitPaste: () => submitPaste('convert'),
-          onClearFile: () => dispatch({ type: ACT.FILE_CLEAR, slot: 'convert' }),
+          onClearFile: () => { dispatch({ type: ACT.FILE_CLEAR, slot: 'convert' }); dispatch({ type: ACT.BATCH_SET, files: [] }) },
           onTarget: (to) => dispatch({ type: ACT.TARGET, to }),
           onCopyToggle: (checked) => dispatch({ type: ACT.COPY, copy: checked }),
           onSubmit: () => submit('convert'),
           outputDir,
           outputPath,
           onChooseOutput: chooseOutputDir,
+          onTrimToggle: (enabled) => dispatch({ type: ACT.TRIM_TOGGLE, enabled }),
+          onTrimText: (field, value) => dispatch({ type: ACT.TRIM_TEXT, field, value }),
         })
         : null,
       state.screen === 'gif'
@@ -4589,6 +4727,8 @@ function createPanel(React) {
           outputDir,
           outputPath,
           onChooseOutput: chooseOutputDir,
+          onTrimToggle: (enabled) => dispatch({ type: ACT.TRIM_TOGGLE, enabled }),
+          onTrimText: (field, value) => dispatch({ type: ACT.TRIM_TEXT, field, value }),
         })
         : null,
       state.screen !== 'home'

@@ -1,6 +1,7 @@
 /**
- * 系统文件选择：用隐藏的 <input type="file"> 打开原生对话框。
+ * 系统文件选择：隐藏的 <input type="file"> 打开原生对话框。
  * 桌面端尽量取回真实绝对路径；网页端拿不到路径，就把文件交给宿主写入临时目录。
+ * `multiple` 只给批量转换用。
  */
 
 /** @param {File} file */
@@ -23,9 +24,10 @@ function electronPath(file) {
 }
 
 /**
- * @returns {Promise<{ ok: true, file: File, name: string, path: string } | { ok: false, reason: 'cancel' }>}
+ * @param {boolean} [multiple]
+ * @returns {Promise<{ ok: true, files: Array<{ file: File, name: string, path: string }> } | { ok: false, reason: 'cancel' }>}
  */
-export function chooseLocalFile() {
+export function chooseLocalFile(multiple) {
   return new Promise((resolve) => {
     if (typeof document === 'undefined') {
       resolve({ ok: false, reason: 'cancel' })
@@ -34,6 +36,7 @@ export function chooseLocalFile() {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'video/*,audio/*,.mkv,.flac,.m4a,.wav,.webm,.vdat,.sdv'
+    if (multiple === true) input.multiple = true
     input.style.position = 'fixed'
     input.style.left = '-9999px'
     document.body.appendChild(input)
@@ -42,12 +45,15 @@ export function chooseLocalFile() {
       resolve(value)
     }
     input.addEventListener('change', () => {
-      const file = input.files && input.files[0]
-      if (!file) {
+      const picked = input.files ? Array.from(input.files) : []
+      if (picked.length === 0) {
         done({ ok: false, reason: 'cancel' })
         return
       }
-      done({ ok: true, file, name: file.name, path: electronPath(file) })
+      done({
+        ok: true,
+        files: picked.map((file) => ({ file, name: file.name, path: electronPath(file) })),
+      })
     })
     input.addEventListener('cancel', () => done({ ok: false, reason: 'cancel' }))
     input.click()
