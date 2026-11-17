@@ -1,5 +1,10 @@
 # 更新记录
 
+## 0.0.39
+
+- 补发布清单（docs/PUBLISH.md）与 Gitee 简介更新脚本；
+- package.json 增加 publishConfig，可公开 npm 发布。
+
 ## 0.0.38
 
 - 修复宿主入口未把配置传给实现的问题：outputDir / ffmpegPath / apiKey / autoDownload 现在生效；

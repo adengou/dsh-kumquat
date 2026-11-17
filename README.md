@@ -89,7 +89,7 @@ DSH 桌面客户端与 `dsh web` 共用同一份客户端 bundle。文件以本�
 
 Linux 只做了逻辑验证，macOS 未上机。
 
-## 参与\n\n规则与本地跑法见 [CONTRIBUTING.md](CONTRIBUTING.md)。运行时零依赖，客户端改动需要提交重新生成的 client.js。\n\n## 开发
+## 参与\n\n规则与本地跑法见 [CONTRIBUTING.md](CONTRIBUTING.md)；发布流程见 [docs/PUBLISH.md](docs/PUBLISH.md)。运行时零依赖，客户端改动需要提交重新生成的 client.js。\n\n## 开发
 
 ```bash
 node scripts/make-fixtures.mjs
