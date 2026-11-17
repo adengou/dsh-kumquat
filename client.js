@@ -941,7 +941,7 @@ function selectHome(state) {
       {
         key: 'convert',
         title: '视频格式转换',
-        desc: '换个格式，或把视频里的声音抽出来',
+        desc: '换格式、抽音频；可裁剪片段，也可一次多选批量转',
         disabled: false,
         reason: null,
       },
@@ -3387,7 +3387,7 @@ function FileStrip({ slot, model, onPick, onOpenPaste, onClosePaste, onDraft, on
           'aria-label': `移除文件 ${file.name}`,
           title: '移除',
         }, h(KqIcon, { name: 'close', size: 14 })))
-      : h('p', { className: 'kq-hint' }, '还没有文件。桌面端直接从系统对话框选，网页端会复制到本机临时目录后处理。'),
+      : h('p', { className: 'kq-hint' }, '还没有文件。点「添加文件」可一次多选（Ctrl/Shift）做批量转换。'),
     model.batchCount > 1
       ? h('p', { className: 'kq-hint' }, '批量：共 ' + model.batchCount + ' 个文件，按同一格式依次转换。')
       : null)
@@ -4305,7 +4305,7 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal })
  * @param {{ useState: Function, useEffect: Function, useRef: Function }} React
  */
 
-const KQ_VERSION = '0.0.36'
+const KQ_VERSION = '0.0.37'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {

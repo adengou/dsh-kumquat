@@ -562,7 +562,7 @@ export function selectHome(state) {
       {
         key: 'convert',
         title: '视频格式转换',
-        desc: '换个格式，或把视频里的声音抽出来',
+        desc: '换格式、抽音频；可裁剪片段，也可一次多选批量转',
         disabled: false,
         reason: null,
       },
