@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * Kumquat · 把 src/client 下的 ESM 源码装配成宿主能吃的 client.js。
  *
@@ -228,6 +228,7 @@ ${body}
             try {
               const layout = typeof ctx.get === 'function' ? ctx.get('layout') : undefined
               if (layout && typeof layout.selectPanel === 'function') layout.selectPanel('kumquat')
+              window.dispatchEvent(new CustomEvent('kumquat:open'))
             } catch (error) { /* ignore */ }
           }
           return h('span', { className: 'kq-launchwrap' },

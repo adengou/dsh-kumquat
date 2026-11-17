@@ -4305,7 +4305,7 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal })
  * @param {{ useState: Function, useEffect: Function, useRef: Function }} React
  */
 
-const KQ_VERSION = '0.0.35'
+const KQ_VERSION = '0.0.36'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {
@@ -4352,6 +4352,11 @@ function createPanel(React) {
     const [dialogSlot, setDialogSlot] = React.useState(null)
     const [dirDialog, setDirDialog] = React.useState(false)
     const [minimized, setMinimized] = React.useState(false)
+    React.useEffect(() => {
+      const reopen = () => setMinimized(false)
+      window.addEventListener('kumquat:open', reopen)
+      return () => window.removeEventListener('kumquat:open', reopen)
+    }, [])
     const [outputDir, setOutputDirState] = React.useState(() => {
       try { return window.localStorage.getItem('kumquat.outputDir') || '' } catch { return '' }
     })
@@ -4826,6 +4831,7 @@ function createPanel(React) {
             try {
               const layout = typeof ctx.get === 'function' ? ctx.get('layout') : undefined
               if (layout && typeof layout.selectPanel === 'function') layout.selectPanel('kumquat')
+              window.dispatchEvent(new CustomEvent('kumquat:open'))
             } catch (error) { /* ignore */ }
           }
           return h('span', { className: 'kq-launchwrap' },

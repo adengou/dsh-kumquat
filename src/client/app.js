@@ -69,6 +69,11 @@ export function createPanel(React) {
     const [dialogSlot, setDialogSlot] = React.useState(null)
     const [dirDialog, setDirDialog] = React.useState(false)
     const [minimized, setMinimized] = React.useState(false)
+    React.useEffect(() => {
+      const reopen = () => setMinimized(false)
+      window.addEventListener('kumquat:open', reopen)
+      return () => window.removeEventListener('kumquat:open', reopen)
+    }, [])
     const [outputDir, setOutputDirState] = React.useState(() => {
       try { return window.localStorage.getItem('kumquat.outputDir') || '' } catch { return '' }
     })
