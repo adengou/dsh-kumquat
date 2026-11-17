@@ -1,5 +1,9 @@
 # Kumquat（金桔）
 
+[![npm](https://img.shields.io/npm/v/dsh-kumquat)](https://www.npmjs.com/package/dsh-kumquat)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Gitee](https://img.shields.io/badge/Gitee-adengou%2Fdsh--kumquat-c71d23)](https://gitee.com/adengou/dsh-kumquat)
+
 DeepSeek Harness 的媒体插件：**视频格式转换**、**音频格式转换**、**视频取景做 GIF**，产物出厂前自动验收。
 
 ![界面](docs/images/panel.png)
@@ -14,6 +18,8 @@ DeepSeek Harness 的媒体插件：**视频格式转换**、**音频格式转换
 **监控格式**：`.vdat` / `.sdv` 按内容识别，内部是标准容器时可直接换壳；加密或私有外壳会明确告知，需先用原厂工具导出 MP4。
 
 **取段做 GIF**：拖时间轴选几秒，帧率与宽度可调；超出目标体积自动降宽重试，最多两轮，然后告诉你还差多少。
+
+![视频格式转换：裁剪片段与批量入口](docs/images/video.png)
 
 ## 为什么不是又一个转码工具
 
