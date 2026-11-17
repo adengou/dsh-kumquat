@@ -2,7 +2,8 @@
 
 [![npm](https://img.shields.io/npm/v/dsh-kumquat)](https://www.npmjs.com/package/dsh-kumquat)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Gitee](https://img.shields.io/badge/Gitee-adengou%2Fdsh--kumquat-c71d23)](https://gitee.com/adengou/dsh-kumquat)
+[![GitHub](https://img.shields.io/badge/GitHub-adengou%2Fdsh--kumquat-181717?logo=github)](https://github.com/adengou/dsh-kumquat)
+[![Gitee 镜像](https://img.shields.io/badge/Gitee%20%E9%95%9C%E5%83%8F-adengou%2Fdsh--kumquat-c71d23)](https://gitee.com/adengou/dsh-kumquat)
 
 DeepSeek Harness 的媒体插件：**视频格式转换**、**音频格式转换**、**视频取景做 GIF**，产物出厂前自动验收。
 

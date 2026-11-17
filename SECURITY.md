@@ -2,7 +2,7 @@
 
 ## 报告问题
 
-发现安全问题请通过 Gitee 私信或仓库 Issue 的私密渠道联系维护者，不要在公开 Issue 里贴可利用细节。
+发现安全问题请通过 GitHub 的私密漏洞报告（仓库页 Security → Report a vulnerability）联系维护者，不要在公开 Issue 里贴可利用细节。
 
 ## 密钥
 

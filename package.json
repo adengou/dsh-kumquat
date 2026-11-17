@@ -1,17 +1,17 @@
 {
   "name": "dsh-kumquat",
-  "version": "0.0.41",
+  "version": "0.0.42",
   "type": "module",
   "description": "DSH plugin: format conversion and video-to-GIF, with built-in verification.",
   "license": "MIT",
   "author": "adengou",
-  "homepage": "https://gitee.com/adengou/dsh-kumquat",
+  "homepage": "https://github.com/adengou/dsh-kumquat",
   "repository": {
     "type": "git",
-    "url": "https://gitee.com/adengou/dsh-kumquat.git"
+    "url": "git+https://github.com/adengou/dsh-kumquat.git"
   },
   "bugs": {
-    "url": "https://gitee.com/adengou/dsh-kumquat/issues"
+    "url": "https://github.com/adengou/dsh-kumquat/issues"
   },
   "keywords": [
     "dsh",
