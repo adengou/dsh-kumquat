@@ -131,7 +131,7 @@ export function measure({ run, probe, ffmpeg } = {}) {
       '-f', 'null',
       '-'
     ]
-    const result = await exec(argv)
+    const result = await runTool(argv)
     const parsed = parseEbur128(`${result.stdout}\n${result.stderr}`)
     const stderr = result.stderr || result.stdout
     return {
@@ -177,7 +177,7 @@ export function measure({ run, probe, ffmpeg } = {}) {
       assertPath
     ]
     const [probeResult, scan] = await Promise.all([
-      exec(probeArgv),
+      runTool(probeArgv),
       scanLoopBlock(assertPath)
     ])
     const framesInfo = parseFrameProbe(probeResult.stdout)
@@ -268,7 +268,7 @@ export function measure({ run, probe, ffmpeg } = {}) {
     }
     argv.push('-i', filePath, '-map', '0:v:0?', '-map', '0:a:0?', '-f', 'null', '-')
 
-    const result = await exec(argv)
+    const result = await runTool(argv)
     const stderr = result.stderr.trim()
     return {
       id: window.id,
@@ -283,7 +283,7 @@ export function measure({ run, probe, ffmpeg } = {}) {
   }
 
   /** @param {string[]} argv */
-  async function exec(argv) {
+  async function runTool(argv) {
     try {
       return normalizeResult(await run(argv))
     } catch (error) {

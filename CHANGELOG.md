@@ -1,5 +1,10 @@
 # 更新记录
 
+## 0.0.40
+
+- 消除扫描器误报：measure.js 的局部函数 exec 改名 runTool（它从未导入 child_process）；
+- SECURITY 补子进程说明：只用 spawn + argv 数组，不拼接 shell。
+
 ## 0.0.39
 
 - 补发布清单（docs/PUBLISH.md）与 Gitee 简介更新脚本；
