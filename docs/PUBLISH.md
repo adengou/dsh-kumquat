@@ -1,10 +1,10 @@
 # 发布清单
 
-三件事只差账号授权；代码与文案已备好。
+主仓库在 GitHub：<https://github.com/adengou/dsh-kumquat>；Gitee 是同内容的镜像：<https://gitee.com/adengou/dsh-kumquat>。
 
-## 1. Gitee 仓库简介与标签
+## 1. GitHub 主仓库
 
-位置：仓库页 →「管理」→「基本信息」。
+位置：仓库页 →「Settings」→「General」，以及首页「About」齿轮。
 
 简介：
 
@@ -12,39 +12,42 @@
 DSH 插件：视频/音频格式转换与取景 GIF，产物出厂前自动验收。
 ```
 
-标签：
+Topics：
 
 ```
-dsh, dsh-plugin, ffmpeg, gif, media-converter
+dsh, dsh-plugin, deepseek-harness, ffmpeg, gif, video-converter, audio-converter
 ```
 
-有个人访问令牌（`projects` 权限）时，也可用脚本：
+主页：
+
+```
+https://www.npmjs.com/package/dsh-kumquat
+```
+
+## 2. CI
+
+推送 `main` 或开 PR 都会跑 `.github/workflows/ci.yml`：零运行时依赖校验、`client.js` 与源码一致性、单元测试（Node 24，跑测试前安装 FFmpeg）。
+
+## 3. Gitee 镜像
+
+改完 GitHub 后同步过去：
+
+```bash
+git push https://gitee.com/adengou/dsh-kumquat.git main
+git push https://gitee.com/adengou/dsh-kumquat.git --tags
+```
+
+Gitee 仓库页的简介与标签（网页填写），可用脚本改简介与主页：
 
 ```bash
 GITEE_TOKEN=xxxx node scripts/gitee-meta.mjs
 ```
 
-脚本只改简介与主页，不改可见性、不改代码；标签仍需在网页上填。
-
-## 2. GitHub 镜像（CI 用）
-
-先在 GitHub 建空仓库 `dsh-kumquat`（不要勾选 README），然后：
-
-```bash
-git remote add github https://github.com/<账号>/dsh-kumquat.git
-git push github main
-git push github --tags
-```
-
-推上去后 `.github/workflows/ci.yml` 会自动跑：零运行时依赖校验、`client.js` 与源码一致性、352 条单元测试。
-
-## 3. npm 发布（一条命令安装）
-
-首次：
+## 4. npm 发布（一条命令安装）
 
 ```bash
 npm login
-npm publish
+npm publish --registry=https://registry.npmjs.org/
 ```
 
 之后用户即可：
@@ -56,12 +59,12 @@ dsh plugin --profile desktop add dsh-kumquat
 发布前检查：
 
 ```bash
-npm pack --dry-run     # 94 个文件，约 462 kB
+npm pack --dry-run     # 98 个文件，约 741 kB
 ```
 
-包名 `dsh-kumquat` 已于 2026-11-17 发布 `0.0.39` 到 npmjs；国内镜像已同步（`latest = 0.0.39`）。
+包名 `dsh-kumquat` 发布到 npmjs；国内镜像同步有延迟，以 `npm view dsh-kumquat version` 为准。
 
 ## 版本与标签
 
-- 当前版本 `0.0.38`，Gitee 标签 `v0.0.38` 已推；
+- 当前版本 `0.0.42`，标签 `v0.0.42`；
 - 每次发版：改 `package.json` → 构建 `client.js` → 提交 → 打标签 → `npm publish` → `git push --tags`。

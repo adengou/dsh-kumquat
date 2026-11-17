@@ -1,5 +1,11 @@
 # 更新记录
 
+## 0.0.42
+
+- 主仓库改为 GitHub：<https://github.com/adengou/dsh-kumquat>，Gitee 作为同内容镜像；
+- `package.json` 的 repository / homepage / bugs 与文档中的仓库地址一并指向 GitHub，便于插件市场关联 npm 包；
+- 无功能改动。
+
 ## 0.0.41
 
 - 修复：本机没有 FFmpeg 时，`GET /api/kumquat/capabilities` 返回 200 与空能力表（`available: false`），面板照常渲染，安装提示仍由 FFmpeg 横幅负责；此前这里返回 500，等于把「没装 FFmpeg」当成故障；
