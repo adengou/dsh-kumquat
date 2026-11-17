@@ -29,12 +29,12 @@ DeepSeek Harness 的媒体插件：**视频格式转换**、**音频格式转换
 要求 DSH 0.2.x、Node 20.12 以上。插件本身零依赖，不需要 `npm install`。
 
 ```bash
-# 从仓库本地安装（当前方式）
-dsh plugin --profile desktop add file:C:/path/to/dsh-kumquat
-dsh plugin --profile web add file:C:/path/to/dsh-kumquat
+# 从 npm 安装
+dsh plugin --profile desktop add dsh-kumquat
+dsh plugin --profile web add dsh-kumquat
 ```
 
-桌面客户端也可以在插件面板里指向本地目录安装。装完重启，侧栏出现「金桔」。
+桌面客户端也可以在插件面板里按包名 `dsh-kumquat` 安装；开发时仍可指向本地目录。装完重启，侧栏出现「金桔」。
 
 ## 使用
 

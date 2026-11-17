@@ -59,7 +59,7 @@ dsh plugin --profile desktop add dsh-kumquat
 npm pack --dry-run     # 94 个文件，约 462 kB
 ```
 
-包名 `dsh-kumquat` 当前未被占用（registry 返回 404）。
+包名 `dsh-kumquat` 已于 2026-11-17 发布 `0.0.39` 到 npmjs；国内镜像已同步（`latest = 0.0.39`）。
 
 ## 版本与标签
 
