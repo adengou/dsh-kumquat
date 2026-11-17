@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Balance widget: field mapping, no-key short circuit, HTTP failure, timeout,
  * and the 30-second memo. The key must never appear in a result.
  */
@@ -8,7 +8,7 @@ import test from 'node:test'
 
 import { createBalance, mapBalance, BALANCE_URL } from '../../src/host/balance.js'
 
-const SECRET = 'sk-test-DO-NOT-LEAK-1234567890'
+const SECRET = 'test-key-not-real'
 
 /**
  * Build a minimal Response stand-in.
@@ -201,3 +201,4 @@ test('is_available=false 时仍返回余额，只把 available 置 false', () =>
   const info = mapBalance({ is_available: false, balance_infos: [{ currency: 'USD', total_balance: '0.00' }] }, 9)
   assert.deepEqual(info, { ok: true, currency: 'USD', total: '0.00', available: false, at: 9 })
 })
+

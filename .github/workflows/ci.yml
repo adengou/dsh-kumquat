@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: 运行时依赖必须为空
+        run: node -e "const p=require('./package.json'); if (p.dependencies && Object.keys(p.dependencies).length) { console.error('运行时依赖必须为空'); process.exit(1) }"
+      - name: 构建一致性
+        run: node src/client/build.js --check
+      - name: 单元测试
+        run: node --test --test-isolation=none "test/unit/*.test.mjs"
+      # 端到端测试需要本机 ffmpeg 与可写目录，留在本地按 CONTRIBUTING.md 跑。

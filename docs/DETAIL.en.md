@@ -1,21 +1,27 @@
-![A video selection becomes a looping GIF and the result carries a verification badge](preview.svg)
+﻿![Kumquat panel with three task entries](images/panel.png)
 
 # Kumquat
 
 Change a format, or cut a few seconds into a GIF; then have it checked.
 
-Two tasks, three screens: pick a task, answer the one required question, read the result under the form. It is not a media toolbox.
+Three tasks, three screens: pick a task, answer the one required question, read the result under the form. It is not a media toolbox.
 
-## The two tasks
+## The three tasks
 
-### Format conversion
+### Video format conversion
 
 Turn a video or audio file into another container:
 
 - Video: MP4, MKV, MOV, WEBM, AVI
-- Audio: MP3, M4A, WAV, FLAC
+- Audio output: MP3, M4A, WAV, FLAC, AAC, OGG, OPUS, WMA
 
 One required answer: the target format. When a stream copy is possible it is the default (`-c copy`, done in seconds); when it is not, the panel states why and re-encodes for the target container. Choosing MP3 for a video extracts its audio — there is no separate "extract audio" entry.
+
+### Audio format conversion
+
+MP3, M4A, WAV, FLAC, AAC, OGG, OPUS and WMA convert into each other; video and audio only, no picture.
+
+Video conversion can also trim a segment (start/end, re-encoded for an accurate cut) and batch several files with one target; each file gets its own verdict.
 
 ### Video to GIF
 
@@ -71,7 +77,7 @@ Rules:
 - The request happens in the Host process only: `GET https://api.deepseek.com/user/balance`, Bearer authentication, 5-second timeout.
 - The key never reaches the client, never appears in a log, and never appears in a response. The panel can only learn whether a key is configured.
 - The result is cached for 30 seconds (`balanceRefreshMs` changes that). Failures degrade silently to "not connected"; they never raise an error or block the panel.
-- This is the plugin's **only network egress**.
+- Balance is optional; the only other network access is the official FFmpeg download when none is installed.
 
 ## Dependencies and network
 
@@ -99,3 +105,4 @@ The plugin **bundles no fonts**. The interface uses the system font stack and fo
 - Cancellation targets one job. A failed job does not block the queue.
 - The output directory defaults to `Kumquat/` inside the platform download folder; `outputDir` changes it.
 - macOS and Linux share the same abstraction but have only been exercised on Windows.
+

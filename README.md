@@ -83,13 +83,13 @@ DSH 桌面客户端与 `dsh web` 共用同一份客户端 bundle。文件以本�
 
 ## 验证
 
-- 单元测试 349 条、端到端 16 条（Windows 实测）；
+- 单元测试 352 条、端到端 16 条（Windows 实测）；
 - 覆盖：视频/音频格式转换、GIF 取段与体积闭环、取消与临时文件清理、并发隔离、坏样本错误语义、宿主路由与注入；
 - 验证记录见 [docs/VERIFICATION.md](docs/VERIFICATION.md)。
 
 Linux 只做了逻辑验证，macOS 未上机。
 
-## 开发
+## 参与\n\n规则与本地跑法见 [CONTRIBUTING.md](CONTRIBUTING.md)。运行时零依赖，客户端改动需要提交重新生成的 client.js。\n\n## 开发
 
 ```bash
 node scripts/make-fixtures.mjs
