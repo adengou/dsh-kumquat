@@ -37,6 +37,8 @@ export interface Capabilities {
   filters: string[]
   encoders: string[]
   muxers: string[]
+  /** 本机是否找到可用的 FFmpeg；为 false 时上面的列表为空。 */
+  available?: boolean
 }
 
 export type ConvertTask = {

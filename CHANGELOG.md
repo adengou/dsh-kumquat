@@ -1,5 +1,10 @@
 # 更新记录
 
+## 0.0.41
+
+- 修复：本机没有 FFmpeg 时，`GET /api/kumquat/capabilities` 返回 200 与空能力表（`available: false`），面板照常渲染，安装提示仍由 FFmpeg 横幅负责；此前这里返回 500，等于把「没装 FFmpeg」当成故障；
+- 修复：服务层挂在 `.shape` 上的 `E_CAPABILITY` 不再被降级成 `E_HOST`/500，probe 与转换在缺 FFmpeg 时按设计返回 412，并保留原始提示。
+
 ## 0.0.40
 
 - 消除扫描器误报：measure.js 的局部函数 exec 改名 runTool（它从未导入 child_process）；

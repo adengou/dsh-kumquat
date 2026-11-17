@@ -84,7 +84,11 @@ export function statusForCode(code) {
  */
 export function toErrorShape(error) {
   if (error !== null && typeof error === 'object') {
-    const candidate = /** @type {{ code?: unknown, message?: unknown, hint?: unknown }} */ (error)
+    const candidate = /** @type {{ code?: unknown, message?: unknown, hint?: unknown, shape?: unknown }} */ (error)
+    // 服务层把准备好的形状挂在 `.shape` 上；认它，否则 E_CAPABILITY 会被降级成 E_HOST/500。
+    if (candidate.shape !== null && typeof candidate.shape === 'object') {
+      return toErrorShape(candidate.shape)
+    }
     const code = typeof candidate.code === 'string' && candidate.code !== '' ? candidate.code : HOST_CODES.HOST
     const message = typeof candidate.message === 'string' && candidate.message !== ''
       ? candidate.message

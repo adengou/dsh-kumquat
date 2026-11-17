@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Application service: wires engine + verifier into the public contract.
  * Parallelism is delegated to the scheduler (between jobs, never inside one).
  */
@@ -28,6 +28,37 @@ function defaultOutputDir() {
 
 function errorShape(code, message, hint) {
   return { code, message, hint }
+}
+
+/**
+ * 缺少 FFmpeg 时的能力表：字段齐全但列表为空。
+ * 面板据此把目标格式判为不可用，再由 `/ffmpeg/status` 的横幅提示安装，
+ * 因此「没装 FFmpeg」不该是一份 500 错误。
+ * @returns {import('../public/types.d.ts').Capabilities} 降级能力表。
+ */
+function unavailableCapabilities() {
+  return Object.freeze({
+    ffmpeg: '',
+    ffprobe: '',
+    version: '',
+    filters: Object.freeze([]),
+    encoders: Object.freeze([]),
+    muxers: Object.freeze([]),
+    available: false,
+  })
+}
+
+/**
+ * 判断错误是否表示「本机没有可用的 FFmpeg」。
+ * `ensureFfmpeg` 把形状挂在 `.shape` 上，引擎层则直接给 `.code`，两种都要认。
+ * @param {unknown} error - 抛出的值。
+ * @returns {boolean} 是否为缺少 FFmpeg。
+ */
+function isMissingFfmpeg(error) {
+  if (error === null || typeof error !== 'object') return false
+  const value = /** @type {{ code?: unknown, shape?: { code?: unknown } }} */ (error)
+  if (value.code === 'E_CAPABILITY') return true
+  return value.shape !== null && typeof value.shape === 'object' && value.shape.code === 'E_CAPABILITY'
 }
 
 async function cleanupTemp(file, timeoutMs = 15000) {
@@ -71,6 +102,7 @@ async function uniquePath(dir, filename) {  const ext = path.extname(filename)
  *   outputDir?: string,
  *   ffmpegPath?: string,
  *   binaryRoot?: string,
+ *   resolveFfmpeg?: typeof resolveFfmpeg,
  *   onProgress?: (jobId: string, progress: object) => void,
  *   onEvent?: (event: object) => void,
  * }} [options]
@@ -81,13 +113,14 @@ export function createService(options = {}) {
   const evidenceRoot = path.join(options.binaryRoot || path.join(os.homedir(), '.dsh', 'kumquat'), 'jobs')
   const jobs = new Map()
   const progressSink = typeof options.onProgress === 'function' ? options.onProgress : () => {}
+  const locateFfmpeg = typeof options.resolveFfmpeg === 'function' ? options.resolveFfmpeg : resolveFfmpeg
 
   let location = null
   let capsCache = null
 
   async function ensureFfmpeg() {
     if (location) return location
-    const found = await resolveFfmpeg(options.ffmpegPath ? { path: options.ffmpegPath } : {})
+    const found = await locateFfmpeg(options.ffmpegPath ? { path: options.ffmpegPath } : {})
     if (!found) {
       const err = new Error('没有找到 FFmpeg')
       err.shape = errorShape(
@@ -102,11 +135,20 @@ export function createService(options = {}) {
   }
 
   async function capabilities() {
-    const loc = await ensureFfmpeg()
-    if (capsCache && capsCache.key === `${loc.ffmpeg}|${loc.version}`) return capsCache.value
+    let loc
+    try {
+      loc = await ensureFfmpeg()
+    } catch (error) {
+      // 缺 FFmpeg 不是故障：返回空表让面板照常渲染，安装提示由二进制横幅负责。
+      if (isMissingFfmpeg(error)) return unavailableCapabilities()
+      throw error
+    }
+    const key = `${loc.ffmpeg}|${loc.version}`
+    if (capsCache && capsCache.key === key) return capsCache.value
     const value = await engineCapabilities({ ffmpeg: loc.ffmpeg })
-    capsCache = { key: `${loc.ffmpeg}|${loc.version}`, value }
-    return value
+    const flagged = Object.freeze({ ...value, available: true })
+    capsCache = { key, value: flagged }
+    return flagged
   }
 
   async function probe(input) {

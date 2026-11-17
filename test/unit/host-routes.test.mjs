@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Route table: the 501 wiring answer, whitelist validation, the FFmpeg job
  * routes, and the fact that the balance route never touches the network
  * without a key.
@@ -313,6 +313,56 @@ test('capabilities 合并面板身份并被缓存', async () => {
   assert.equal(first.body.panel.fallback.expanded, true)
   assert.deepEqual(second.body, first.body)
   assert.deepEqual(calls, [['capabilities']], '缓存期内只探测一次')
+})
+
+test('缺 FFmpeg 时 capabilities 仍返回 200，且空表不缓存', async () => {
+  const degraded = Object.freeze({
+    ffmpeg: '',
+    ffprobe: '',
+    version: '',
+    filters: Object.freeze([]),
+    encoders: Object.freeze([]),
+    muxers: Object.freeze([]),
+    available: false,
+  })
+  const { service, calls } = fakeService({
+    capabilities: async () => {
+      calls.push(['capabilities'])
+      return degraded
+    },
+  })
+  const router = makeRouter({ service })
+
+  const first = await call(router, `${ROUTE_PREFIX}/capabilities`)
+  const second = await call(router, `${ROUTE_PREFIX}/capabilities`)
+
+  assert.equal(first.status, 200)
+  assert.equal(first.body.available, false)
+  assert.deepEqual(first.body.muxers, [])
+  assert.equal(second.status, 200)
+  assert.equal(calls.length, 2, '缺 FFmpeg 的空表不能被缓存，装好后要立刻生效')
+})
+
+test('服务层挂在 .shape 上的 E_CAPABILITY 映射为 412 并保留提示', async () => {
+  const { service } = fakeService({
+    probe: async () => {
+      const error = new Error('没有找到 FFmpeg')
+      error.shape = {
+        code: 'E_CAPABILITY',
+        message: '本机没有可用的 FFmpeg',
+        hint: '在面板里点“下载并安装”',
+      }
+      throw error
+    },
+  })
+  const router = makeRouter({ service })
+
+  const result = await call(router, `${ROUTE_PREFIX}/probe`, { method: 'POST', body: { path: ABS } })
+
+  assert.equal(result.status, 412)
+  assert.equal(result.body.error.code, 'E_CAPABILITY')
+  assert.equal(result.body.error.message, '本机没有可用的 FFmpeg')
+  assert.equal(result.body.error.hint, '在面板里点“下载并安装”')
 })
 
 test('ffmpeg 状态与安装：立即返回 jobId，第二次请求并入同一任务', async () => {

@@ -312,7 +312,8 @@ export function createRouter(options) {
         // Additive field: the Client reads the panel identity from one source.
         panel: PANEL,
       }
-      capabilitiesCache = { expires: stamp + capabilitiesTtlMs, value: body }
+      // 缺 FFmpeg 的空表不缓存：装好之后下一次请求就该拿到真实能力。
+      if (body.available !== false) capabilitiesCache = { expires: stamp + capabilitiesTtlMs, value: body }
       return body
     })()
     capabilitiesInFlight = attempt.finally(() => {
