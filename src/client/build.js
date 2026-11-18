@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
  * Kumquat · 把 src/client 下的 ESM 源码装配成宿主能吃的 client.js。
  *
@@ -47,6 +47,7 @@ const MODULES = [
   'components/FileDialog.js',
   'components/OutputPicker.js',
   'components/TrimFields.js',
+  'components/KumquatMark.js',
   'components/FormatPill.js',
   'components/CopyToggle.js',
   'components/TimelineRange.js',
@@ -236,16 +237,19 @@ ${body}
               className: 'kq-launch',
               type: 'button',
               title: '金桔',
+              'aria-label': '打开金桔面板',
               'aria-haspopup': 'dialog',
               onClick: open,
             },
             h('svg', {
-              width: 16, height: 16, viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false',
-              style: { color: 'var(--kq-accent)' },
+              width: 18, height: 18, viewBox: '0 0 32 32', 'aria-hidden': 'true', focusable: 'false',
             },
-            h('circle', { cx: 8, cy: 9.5, r: 5.5, fill: 'currentColor' }),
-            h('path', { d: 'M8 4c0-2 1.4-3 3-3-.4 2-1.4 3-3 3z', fill: '#3ddc97' })),
-            h('span', { style: { fontSize: 12.5 } }, '金桔')))
+            h('circle', { cx: 16, cy: 19, r: 10, fill: '#ff9a2e' }),
+            h('ellipse', { cx: 12.5, cy: 15, rx: 3, ry: 2, fill: '#ffd08a', opacity: 0.75 }),
+            h('path', { d: 'M16 9c1.6-4.2 5.2-6.2 9.4-5.2-1.2 4.2-4.4 6.6-9.4 5.2z', fill: '#2fbf82' }),
+            h('path', { d: 'M16 9c-2.6-3-6-3.6-8.6-2.2 1.6 3 4.8 4.2 8.6 2.2z', fill: '#3ddc97' }),
+            h('path', { d: 'M16 9V5.5', stroke: '#8a5a2b', strokeWidth: 2, strokeLinecap: 'round' })),
+            h('span', { className: 'kq-launch__text' }, '金桔')))
         }        // The layout switches panels by id: a same-key 'main' registration is
         // required, even though the overlay is what users actually see.
         const Bound = (slotProps) => h(Panel, Object.assign({}, slotProps, { api, pickFile }))
@@ -259,7 +263,7 @@ ${body}
         register('main', { key: 'kumquat' }, Bound)
         // The overlay opens from the sidebar row and from the composer dock, so
         // the panel does not depend on a skin's main-area layout.
-        register('sidebar.panellist', { id: 'kumquat', order: 40, label: () => '金桔' }, Launcher)
+        register('sidebar.panellist', { id: 'kumquat', order: 40, label: () => '' }, Launcher)
         register('conversation.composer.dock', { id: 'kumquat', order: 5 }, Launcher)
       },
     }
@@ -289,6 +293,8 @@ ${body}
 }
 
 main()
+
+
 
 
 

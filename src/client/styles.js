@@ -47,8 +47,7 @@ export const CSS_TEXT = `
 .kq-head{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--kq-line);min-height:56px}
 .kq-back{background:none;border:0;color:var(--kq-muted);font-size:var(--kq-fs-3);line-height:1;padding:4px 6px;cursor:pointer;border-radius:var(--kq-r-sm);transition:color var(--kq-motion)}
 .kq-back:hover{color:var(--kq-text)}
-.kq-mark{width:25px;height:25px;border-radius:var(--kq-r-sm);display:grid;place-items:center;flex:none;
-  background:linear-gradient(135deg,#ffc46b,var(--kq-accent));color:#2a1400;font-weight:700;font-size:var(--kq-fs-1)}
+.kq-mark{width:26px;height:26px;display:grid;place-items:center;flex:none;background:none}
 .kq-title{font-size:var(--kq-fs-3);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kq-sub{font-size:var(--kq-fs-1);color:var(--kq-muted);white-space:nowrap}
 .kq-status{margin-left:auto;font-size:var(--kq-fs-1);color:var(--kq-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -319,6 +318,9 @@ export const CSS_TEXT = `
 
 /* ── 覆盖层：不依赖宿主皮肤的主区域布局 ─────────────── */
 .kq-launch{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:2px;color:inherit;cursor:pointer}
+.kq-launchwrap{display:block;width:100%}
+.kq-launch{width:100%;justify-content:flex-start;gap:8px}
+.kq-launch__text{font-size:12.5px}
 .kq-veil{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;
   background:rgba(8,10,14,.55);backdrop-filter:blur(2px);padding:24px}
 .kq-veil__box{position:relative;width:min(680px,100%);max-height:min(86vh,820px);overflow:auto;

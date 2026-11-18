@@ -2838,8 +2838,7 @@ const CSS_TEXT = `
 .kq-head{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--kq-line);min-height:56px}
 .kq-back{background:none;border:0;color:var(--kq-muted);font-size:var(--kq-fs-3);line-height:1;padding:4px 6px;cursor:pointer;border-radius:var(--kq-r-sm);transition:color var(--kq-motion)}
 .kq-back:hover{color:var(--kq-text)}
-.kq-mark{width:25px;height:25px;border-radius:var(--kq-r-sm);display:grid;place-items:center;flex:none;
-  background:linear-gradient(135deg,#ffc46b,var(--kq-accent));color:#2a1400;font-weight:700;font-size:var(--kq-fs-1)}
+.kq-mark{width:26px;height:26px;display:grid;place-items:center;flex:none;background:none}
 .kq-title{font-size:var(--kq-fs-3);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kq-sub{font-size:var(--kq-fs-1);color:var(--kq-muted);white-space:nowrap}
 .kq-status{margin-left:auto;font-size:var(--kq-fs-1);color:var(--kq-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -3110,6 +3109,9 @@ const CSS_TEXT = `
 
 /* ── 覆盖层：不依赖宿主皮肤的主区域布局 ─────────────── */
 .kq-launch{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:2px;color:inherit;cursor:pointer}
+.kq-launchwrap{display:block;width:100%}
+.kq-launch{width:100%;justify-content:flex-start;gap:8px}
+.kq-launch__text{font-size:12.5px}
 .kq-veil{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;
   background:rgba(8,10,14,.55);backdrop-filter:blur(2px);padding:24px}
 .kq-veil__box{position:relative;width:min(680px,100%);max-height:min(86vh,820px);overflow:auto;
@@ -3617,6 +3619,29 @@ function TrimFields({ trim, onToggle, onText }) {
 }
 
 
+/* ── components/KumquatMark.js ── */
+/** 金桔标识：橙色果实 + 两片叶子，扁平、小尺寸可辨。 */
+
+
+/** @param {{ size?: number, className?: string }} props */
+function KumquatMark({ size, className }) {
+  const px = Number.isFinite(size) ? size : 24
+  return h('svg', {
+    className,
+    width: px,
+    height: px,
+    viewBox: '0 0 32 32',
+    'aria-hidden': 'true',
+    focusable: 'false',
+  },
+  h('circle', { cx: 16, cy: 19, r: 10, fill: '#ff9a2e' }),
+  h('ellipse', { cx: 12.5, cy: 15, rx: 3, ry: 2, fill: '#ffd08a', opacity: 0.75 }),
+  h('path', { d: 'M16 9c1.6-4.2 5.2-6.2 9.4-5.2-1.2 4.2-4.4 6.6-9.4 5.2z', fill: '#2fbf82' }),
+  h('path', { d: 'M16 9c-2.6-3-6-3.6-8.6-2.2 1.6 3 4.8 4.2 8.6 2.2z', fill: '#3ddc97' }),
+  h('path', { d: 'M16 9V5.5', stroke: '#8a5a2b', strokeWidth: 2, strokeLinecap: 'round' }))
+}
+
+
 /* ── components/FormatPill.js ── */
 /**
  * 格式胶囊：九个目标，一个必答项。
@@ -4095,7 +4120,7 @@ function ScreenHeader({ header, onBack }) {
         title: '返回',
       }, h(KqIcon, { name: 'arrowLeft', size: 18 }))
       : null,
-    h('span', { className: 'kq-mark', 'aria-hidden': 'true' }, 'K'),
+    h('span', { className: 'kq-mark', 'aria-hidden': 'true' }, h(KumquatMark, { size: 24 })),
     h('span', { className: 'kq-title' }, header.title),
     h('span', { className: 'kq-sub' }, header.sub),
     h('span', {
@@ -4104,6 +4129,8 @@ function ScreenHeader({ header, onBack }) {
       'aria-live': 'polite',
     }, header.status))
 }
+
+
 
 
 /* ── screens/HomeScreen.js ── */
@@ -4305,7 +4332,7 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal })
  * @param {{ useState: Function, useEffect: Function, useRef: Function }} React
  */
 
-const KQ_VERSION = '0.0.42'
+const KQ_VERSION = '0.0.43'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {
@@ -4839,16 +4866,19 @@ function createPanel(React) {
               className: 'kq-launch',
               type: 'button',
               title: '金桔',
+              'aria-label': '打开金桔面板',
               'aria-haspopup': 'dialog',
               onClick: open,
             },
             h('svg', {
-              width: 16, height: 16, viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false',
-              style: { color: 'var(--kq-accent)' },
+              width: 18, height: 18, viewBox: '0 0 32 32', 'aria-hidden': 'true', focusable: 'false',
             },
-            h('circle', { cx: 8, cy: 9.5, r: 5.5, fill: 'currentColor' }),
-            h('path', { d: 'M8 4c0-2 1.4-3 3-3-.4 2-1.4 3-3 3z', fill: '#3ddc97' })),
-            h('span', { style: { fontSize: 12.5 } }, '金桔')))
+            h('circle', { cx: 16, cy: 19, r: 10, fill: '#ff9a2e' }),
+            h('ellipse', { cx: 12.5, cy: 15, rx: 3, ry: 2, fill: '#ffd08a', opacity: 0.75 }),
+            h('path', { d: 'M16 9c1.6-4.2 5.2-6.2 9.4-5.2-1.2 4.2-4.4 6.6-9.4 5.2z', fill: '#2fbf82' }),
+            h('path', { d: 'M16 9c-2.6-3-6-3.6-8.6-2.2 1.6 3 4.8 4.2 8.6 2.2z', fill: '#3ddc97' }),
+            h('path', { d: 'M16 9V5.5', stroke: '#8a5a2b', strokeWidth: 2, strokeLinecap: 'round' })),
+            h('span', { className: 'kq-launch__text' }, '金桔')))
         }        // The layout switches panels by id: a same-key 'main' registration is
         // required, even though the overlay is what users actually see.
         const Bound = (slotProps) => h(Panel, Object.assign({}, slotProps, { api, pickFile }))
@@ -4862,7 +4892,7 @@ function createPanel(React) {
         register('main', { key: 'kumquat' }, Bound)
         // The overlay opens from the sidebar row and from the composer dock, so
         // the panel does not depend on a skin's main-area layout.
-        register('sidebar.panellist', { id: 'kumquat', order: 40, label: () => '金桔' }, Launcher)
+        register('sidebar.panellist', { id: 'kumquat', order: 40, label: () => '' }, Launcher)
         register('conversation.composer.dock', { id: 'kumquat', order: 5 }, Launcher)
       },
     }
