@@ -211,6 +211,16 @@ export function createPanel(React) {
       setDirDialog(false)
     }
 
+    const closePanel = () => {
+      setMinimized(true)
+      try {
+        const layout = props && props.layout
+        if (layout && typeof layout.selectPanel === 'function') layout.selectPanel(null)
+      } catch {
+        /* ignore */
+      }
+    }
+
     const goHome = () => dispatch({ type: ACT.SCREEN, screen: 'home' })
     const openScreen = (screen) => dispatch({ type: ACT.SCREEN, screen })
     const retry = () => setRefreshKey((value) => value + 1)
@@ -393,7 +403,7 @@ export function createPanel(React) {
     h('span', { className: 'kq-float__title' }, 'Kumquat 金桔 · v' + KQ_VERSION),
     h('span', { className: 'kq-float__balance' }, balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone })),
     h('span', { className: 'kq-float__hint' }, '按住这里拖动'),
-    h('button', { className: 'kq-float__x', type: 'button', 'aria-label': '关闭金桔面板', title: '关闭', onPointerDown: (event) => event.stopPropagation(), onClick: (event) => { event.stopPropagation(); setMinimized(true) } }, '×')),
+    h('button', { className: 'kq-float__x', type: 'button', 'aria-label': '关闭金桔面板', title: '关闭', onPointerDown: (event) => event.stopPropagation(), onClick: (event) => { event.stopPropagation(); closePanel() } }, '×')),
     h('div', { className: 'kq-float__body' },
     h('section', {
       className: 'kq-panel',
@@ -485,6 +495,7 @@ export function createPanel(React) {
 
   return KumquatPanel
 }
+
 
 
 

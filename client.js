@@ -4332,7 +4332,7 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal })
  * @param {{ useState: Function, useEffect: Function, useRef: Function }} React
  */
 
-const KQ_VERSION = '0.0.44'
+const KQ_VERSION = '0.0.46'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {
@@ -4521,6 +4521,16 @@ function createPanel(React) {
       setDirDialog(false)
     }
 
+    const closePanel = () => {
+      setMinimized(true)
+      try {
+        const layout = props && props.layout
+        if (layout && typeof layout.selectPanel === 'function') layout.selectPanel(null)
+      } catch {
+        /* ignore */
+      }
+    }
+
     const goHome = () => dispatch({ type: ACT.SCREEN, screen: 'home' })
     const openScreen = (screen) => dispatch({ type: ACT.SCREEN, screen })
     const retry = () => setRefreshKey((value) => value + 1)
@@ -4703,7 +4713,7 @@ function createPanel(React) {
     h('span', { className: 'kq-float__title' }, 'Kumquat 金桔 · v' + KQ_VERSION),
     h('span', { className: 'kq-float__balance' }, balance.visible === false ? null : h(BalanceLine, { text: balance.text, tone: balance.tone })),
     h('span', { className: 'kq-float__hint' }, '按住这里拖动'),
-    h('button', { className: 'kq-float__x', type: 'button', 'aria-label': '关闭金桔面板', title: '关闭', onPointerDown: (event) => event.stopPropagation(), onClick: (event) => { event.stopPropagation(); setMinimized(true) } }, '×')),
+    h('button', { className: 'kq-float__x', type: 'button', 'aria-label': '关闭金桔面板', title: '关闭', onPointerDown: (event) => event.stopPropagation(), onClick: (event) => { event.stopPropagation(); closePanel() } }, '×')),
     h('div', { className: 'kq-float__body' },
     h('section', {
       className: 'kq-panel',
@@ -4818,6 +4828,7 @@ function createPanel(React) {
 
 
 
+
     bindHost(React)
     const Panel = createPanel(React)
 
@@ -4854,14 +4865,32 @@ function createPanel(React) {
           pickFile = undefined
         }
         const Launcher = () => {
+          const wrapRef = React.useRef(null)
           const open = () => {
             try {
+              window.dispatchEvent(new CustomEvent('kumquat:open'))
               const layout = typeof ctx.get === 'function' ? ctx.get('layout') : undefined
               if (layout && typeof layout.selectPanel === 'function') layout.selectPanel('kumquat')
-              window.dispatchEvent(new CustomEvent('kumquat:open'))
             } catch (error) { /* ignore */ }
           }
-          return h('span', { className: 'kq-launchwrap' },
+          // The host row may swallow the click before it reaches this button.
+          // Listen in the capture phase on the row itself so a click anywhere on
+          // the row (icon, label, padding) still reopens the panel.
+          React.useEffect(() => {
+            const el = wrapRef.current
+            if (!el) return undefined
+            const handler = () => open()
+            const nodes = []
+            let node = el.parentElement
+            for (let i = 0; i < 2 && node; i += 1) {
+              if (i === 1 && node.children.length > 4) break
+              node.addEventListener('click', handler, true)
+              nodes.push(node)
+              node = node.parentElement
+            }
+            return () => { for (const n of nodes) n.removeEventListener('click', handler, true) }
+          }, [])
+          return h('span', { className: 'kq-launchwrap', ref: wrapRef },
             h('button', {
               className: 'kq-launch',
               type: 'button',
@@ -4881,7 +4910,8 @@ function createPanel(React) {
             h('span', { className: 'kq-launch__text' }, '金桔')))
         }        // The layout switches panels by id: a same-key 'main' registration is
         // required, even though the overlay is what users actually see.
-        const Bound = (slotProps) => h(Panel, Object.assign({}, slotProps, { api, pickFile }))
+        const layoutService = (() => { try { return typeof ctx.get === 'function' ? ctx.get('layout') : undefined } catch { return undefined } })()
+        const Bound = (slotProps) => h(Panel, Object.assign({}, slotProps, { api, pickFile, layout: layoutService }))
         const register = (name, options, component) => {
           try {
             ctx.slots.inject(name, () => ctx.slots.register(Object.assign({ name }, options), component))

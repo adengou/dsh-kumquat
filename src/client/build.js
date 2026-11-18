@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * Kumquat · 把 src/client 下的 ESM 源码装配成宿主能吃的 client.js。
  *
@@ -225,14 +225,32 @@ ${body}
           pickFile = undefined
         }
         const Launcher = () => {
+          const wrapRef = React.useRef(null)
           const open = () => {
             try {
+              window.dispatchEvent(new CustomEvent('kumquat:open'))
               const layout = typeof ctx.get === 'function' ? ctx.get('layout') : undefined
               if (layout && typeof layout.selectPanel === 'function') layout.selectPanel('kumquat')
-              window.dispatchEvent(new CustomEvent('kumquat:open'))
             } catch (error) { /* ignore */ }
           }
-          return h('span', { className: 'kq-launchwrap' },
+          // The host row may swallow the click before it reaches this button.
+          // Listen in the capture phase on the row itself so a click anywhere on
+          // the row (icon, label, padding) still reopens the panel.
+          React.useEffect(() => {
+            const el = wrapRef.current
+            if (!el) return undefined
+            const handler = () => open()
+            const nodes = []
+            let node = el.parentElement
+            for (let i = 0; i < 2 && node; i += 1) {
+              if (i === 1 && node.children.length > 4) break
+              node.addEventListener('click', handler, true)
+              nodes.push(node)
+              node = node.parentElement
+            }
+            return () => { for (const n of nodes) n.removeEventListener('click', handler, true) }
+          }, [])
+          return h('span', { className: 'kq-launchwrap', ref: wrapRef },
             h('button', {
               className: 'kq-launch',
               type: 'button',
@@ -252,7 +270,8 @@ ${body}
             h('span', { className: 'kq-launch__text' }, '金桔')))
         }        // The layout switches panels by id: a same-key 'main' registration is
         // required, even though the overlay is what users actually see.
-        const Bound = (slotProps) => h(Panel, Object.assign({}, slotProps, { api, pickFile }))
+        const layoutService = (() => { try { return typeof ctx.get === 'function' ? ctx.get('layout') : undefined } catch { return undefined } })()
+        const Bound = (slotProps) => h(Panel, Object.assign({}, slotProps, { api, pickFile, layout: layoutService }))
         const register = (name, options, component) => {
           try {
             ctx.slots.inject(name, () => ctx.slots.register(Object.assign({ name }, options), component))
@@ -293,6 +312,7 @@ ${body}
 }
 
 main()
+
 
 
 
