@@ -4332,7 +4332,7 @@ function ResultsPanel({ model, onToggle, onCopy, onCancel, onRepair, onReveal })
  * @param {{ useState: Function, useEffect: Function, useRef: Function }} React
  */
 
-const KQ_VERSION = '0.0.43'
+const KQ_VERSION = '0.0.44'
 const FLOAT_KEY = 'kumquat.float.v1'
 
 function readFloatLayout() {
