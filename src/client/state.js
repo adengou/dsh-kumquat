@@ -117,6 +117,7 @@ export function initialState() {
     pendingSubmit: null,
     copied: null,
     notice: null,
+    noticeAt: 0,
   }
 }
 

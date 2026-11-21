@@ -1470,7 +1470,7 @@ export function reducer(state, action) {
     case ACT.COPIED:
       return { ...state, copied: typeof action.key === 'string' ? action.key : null }
     case ACT.NOTICE:
-      return { ...state, notice: action.notice || null }
+      return { ...state, notice: action.notice || null, noticeAt: Date.now() }
     default:
       return state
   }

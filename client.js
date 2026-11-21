@@ -360,6 +360,7 @@ function initialState() {
     pendingSubmit: null,
     copied: null,
     notice: null,
+    noticeAt: 0,
   }
 }
 
@@ -1849,7 +1850,7 @@ function reducer(state, action) {
     case ACT.COPIED:
       return { ...state, copied: typeof action.key === 'string' ? action.key : null }
     case ACT.NOTICE:
-      return { ...state, notice: action.notice || null }
+      return { ...state, notice: action.notice || null, noticeAt: Date.now() }
     default:
       return state
   }
@@ -2926,6 +2927,10 @@ const CSS_TEXT = `
   color:var(--kq-muted);cursor:move;user-select:none;font-size:var(--kq-fs-1);touch-action:none}
 .kq-float__grip{letter-spacing:2px}
 .kq-float__title{flex:1;color:var(--kq-text);font-weight:600;font-size:var(--kq-fs-2)}
+.kq-toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%);z-index:2147482500;
+  max-width:min(560px,90vw);padding:10px 18px;border-radius:999px;background:rgba(18,20,26,.94);
+  color:#fff;font-size:var(--kq-fs-2);line-height:1.4;text-align:center;
+  box-shadow:0 12px 34px rgba(0,0,0,.4);pointer-events:none}
 .kq-float-mini{position:fixed;right:18px;bottom:18px;z-index:2147482000;padding:8px 16px;
   border-radius:999px;border:1px solid var(--kq-accent-line);background:var(--kq-accent);
   color:#fff;font:inherit;font-size:var(--kq-fs-2);cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35)}
@@ -4379,6 +4384,8 @@ function createPanel(React) {
     const [dialogSlot, setDialogSlot] = React.useState(null)
     const [dirDialog, setDirDialog] = React.useState(false)
     const [minimized, setMinimized] = React.useState(false)
+    const [toastText, setToastText] = React.useState('')
+
     React.useEffect(() => {
       const reopen = () => setMinimized(false)
       window.addEventListener('kumquat:open', reopen)
@@ -4438,6 +4445,12 @@ function createPanel(React) {
     if (storeRef.current === null) storeRef.current = createStore(reducer, initialState())
     const store = storeRef.current
     const state = store.getState()
+    React.useEffect(() => {
+      if (!state.noticeAt) return undefined
+      setToastText(state.notice || '')
+      const timer = setTimeout(() => setToastText(''), 3200)
+      return () => clearTimeout(timer)
+    }, [state.noticeAt])
 
     React.useEffect(() => store.subscribe(() => force((value) => value + 1)), [store])
 
@@ -4535,6 +4548,8 @@ function createPanel(React) {
     const openScreen = (screen) => dispatch({ type: ACT.SCREEN, screen })
     const retry = () => setRefreshKey((value) => value + 1)
 
+    const toast = (message) => dispatch({ type: ACT.NOTICE, notice: message })
+
     const reveal = async (path) => {
       if (typeof api.reveal !== 'function') {
         await copy(path)
@@ -4542,15 +4557,19 @@ function createPanel(React) {
         return
       }
       const result = await api.reveal(path)
-      if (result.ok) return
+      if (result.ok) {
+        toast('已在资源管理器中打开')
+        return
+      }
       await copy(path)
-      dispatch({ type: ACT.NOTICE, notice: '已复制输出路径，粘贴到资源管理器地址栏即可打开。' })
+      toast('网页端不能打开文件夹，路径已复制，粘贴到资源管理器地址栏即可。')
     }
 
     const copy = async (text) => {
       const copied = await copyText(text)
       dispatch({ type: ACT.COPIED, key: copied ? text : null })
-      if (!copied) dispatch({ type: ACT.NOTICE, notice: '复制失败：请手动选中命令或路径。' })
+      if (copied) dispatch({ type: ACT.NOTICE, notice: '已复制到剪贴板' })
+      else dispatch({ type: ACT.NOTICE, notice: '复制失败：请手动选中命令或路径。' })
     }
 
     const loadFile = (slot, path, name) => {
@@ -4776,7 +4795,7 @@ function createPanel(React) {
       state.screen !== 'home'
         ? h(ResultsPanel, { model: results, onToggle: (id) => dispatch({ type: ACT.EXPAND, id }), onCopy: copy, onCancel: cancelJob, onRepair: repair, onReveal: reveal })
         : null,
-      state.notice ? h('p', { className: 'kq-hint', role: 'status' }, state.notice) : null),
+      toastText ? h('div', { className: 'kq-toast', role: 'status', 'aria-live': 'polite' }, toastText) : null),
     dialogSlot !== null
       ? h(FileDialog, {
         React,

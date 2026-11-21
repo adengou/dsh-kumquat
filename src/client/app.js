@@ -69,6 +69,8 @@ export function createPanel(React) {
     const [dialogSlot, setDialogSlot] = React.useState(null)
     const [dirDialog, setDirDialog] = React.useState(false)
     const [minimized, setMinimized] = React.useState(false)
+    const [toastText, setToastText] = React.useState('')
+
     React.useEffect(() => {
       const reopen = () => setMinimized(false)
       window.addEventListener('kumquat:open', reopen)
@@ -128,6 +130,12 @@ export function createPanel(React) {
     if (storeRef.current === null) storeRef.current = createStore(reducer, initialState())
     const store = storeRef.current
     const state = store.getState()
+    React.useEffect(() => {
+      if (!state.noticeAt) return undefined
+      setToastText(state.notice || '')
+      const timer = setTimeout(() => setToastText(''), 3200)
+      return () => clearTimeout(timer)
+    }, [state.noticeAt])
 
     React.useEffect(() => store.subscribe(() => force((value) => value + 1)), [store])
 
@@ -225,6 +233,8 @@ export function createPanel(React) {
     const openScreen = (screen) => dispatch({ type: ACT.SCREEN, screen })
     const retry = () => setRefreshKey((value) => value + 1)
 
+    const toast = (message) => dispatch({ type: ACT.NOTICE, notice: message })
+
     const reveal = async (path) => {
       if (typeof api.reveal !== 'function') {
         await copy(path)
@@ -232,15 +242,19 @@ export function createPanel(React) {
         return
       }
       const result = await api.reveal(path)
-      if (result.ok) return
+      if (result.ok) {
+        toast('已在资源管理器中打开')
+        return
+      }
       await copy(path)
-      dispatch({ type: ACT.NOTICE, notice: '已复制输出路径，粘贴到资源管理器地址栏即可打开。' })
+      toast('网页端不能打开文件夹，路径已复制，粘贴到资源管理器地址栏即可。')
     }
 
     const copy = async (text) => {
       const copied = await copyText(text)
       dispatch({ type: ACT.COPIED, key: copied ? text : null })
-      if (!copied) dispatch({ type: ACT.NOTICE, notice: '复制失败：请手动选中命令或路径。' })
+      if (copied) dispatch({ type: ACT.NOTICE, notice: '已复制到剪贴板' })
+      else dispatch({ type: ACT.NOTICE, notice: '复制失败：请手动选中命令或路径。' })
     }
 
     const loadFile = (slot, path, name) => {
@@ -466,7 +480,7 @@ export function createPanel(React) {
       state.screen !== 'home'
         ? h(ResultsPanel, { model: results, onToggle: (id) => dispatch({ type: ACT.EXPAND, id }), onCopy: copy, onCancel: cancelJob, onRepair: repair, onReveal: reveal })
         : null,
-      state.notice ? h('p', { className: 'kq-hint', role: 'status' }, state.notice) : null),
+      toastText ? h('div', { className: 'kq-toast', role: 'status', 'aria-live': 'polite' }, toastText) : null),
     dialogSlot !== null
       ? h(FileDialog, {
         React,

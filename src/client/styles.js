@@ -135,6 +135,10 @@ export const CSS_TEXT = `
   color:var(--kq-muted);cursor:move;user-select:none;font-size:var(--kq-fs-1);touch-action:none}
 .kq-float__grip{letter-spacing:2px}
 .kq-float__title{flex:1;color:var(--kq-text);font-weight:600;font-size:var(--kq-fs-2)}
+.kq-toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%);z-index:2147482500;
+  max-width:min(560px,90vw);padding:10px 18px;border-radius:999px;background:rgba(18,20,26,.94);
+  color:#fff;font-size:var(--kq-fs-2);line-height:1.4;text-align:center;
+  box-shadow:0 12px 34px rgba(0,0,0,.4);pointer-events:none}
 .kq-float-mini{position:fixed;right:18px;bottom:18px;z-index:2147482000;padding:8px 16px;
   border-radius:999px;border:1px solid var(--kq-accent-line);background:var(--kq-accent);
   color:#fff;font:inherit;font-size:var(--kq-fs-2);cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35)}
