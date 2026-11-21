@@ -83,20 +83,25 @@ async function cleanupTemp(file, timeoutMs = 15000) {
   }
 }
 
-async function uniquePath(dir, filename) {  const ext = path.extname(filename)
+const RESERVED_PATHS = new Set()
+
+async function uniquePath(dir, filename) {
+  const ext = path.extname(filename)
   const base = path.basename(filename, ext)
-  let candidate = path.join(dir, filename)
-  for (let i = 1; i < 1000; i += 1) {
+  for (let i = 0; i < 1000; i += 1) {
+    const candidate = path.join(dir, i === 0 ? filename : base + '-' + i + ext)
+    if (RESERVED_PATHS.has(candidate)) continue
     try {
       await fs.access(candidate)
-      candidate = path.join(dir, `${base}-${i}${ext}`)
     } catch {
+      RESERVED_PATHS.add(candidate)
       return candidate
     }
   }
-  return path.join(dir, `${base}-${randomUUID().slice(0, 8)}${ext}`)
+  const fallback = path.join(dir, base + '-' + randomUUID().slice(0, 8) + ext)
+  RESERVED_PATHS.add(fallback)
+  return fallback
 }
-
 /**
  * @param {{
  *   outputDir?: string,
@@ -398,6 +403,7 @@ export function createService(options = {}) {
       if (!verified.verdict.ok) {
         const mapped = mapVerifyFailure(verified.verdict)
         record.detail.error = mapped || errorShape('E_VERIFY', '产物未通过验收', '查看证据里的逐项判定')
+        record.summary.error = record.detail.error
       }
       return verified.verdict.ok
         ? { ok: true, output: finalPath, verdict: verified.verdict }
@@ -412,6 +418,7 @@ export function createService(options = {}) {
       }
       record.summary.endedAt = Date.now()
       record.detail.error = error.shape || errorShape('E_ENCODE', String(error?.message || error), '重试或查看证据')
+      record.summary.error = record.detail.error
       if (error.cancelled) throw error
       throw Object.assign(error, { handled: true })
     }
@@ -459,6 +466,7 @@ export function createService(options = {}) {
         detail.status = 'failed'
         summary.endedAt = Date.now()
         if (!detail.error) detail.error = error?.shape || errorShape('E_ENCODE', String(error?.message || error), '重试或查看日志')
+        summary.error = detail.error
       }
     })
     return summary
