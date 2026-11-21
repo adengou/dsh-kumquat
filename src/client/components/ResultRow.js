@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 结果行：一行一个徽章，点开才展开「期望 / 实际 / 差多少 / 下一步 / 命令」。
  * 不弹窗、不跳页，结果就挂在表单下面。
  */
@@ -86,12 +86,12 @@ export function ResultRow({ row, onToggle, onCopy, onCancel, onRepair, onReveal 
         h('span', { className: 'kq-check-row__text' }, check.text || '—',
           check.delta ? h('span', { className: 'kq-check-row__delta' }, ` （${check.delta}）`) : null))))
         : null,
-      row.command ? h(CommandBlock, { command: row.command, copied: row.copied, onCopy: () => onCopy(row.command) }) : null,
+      row.command ? h(CommandBlock, { command: row.command, copied: row.copied, onCopy: (event) => onCopy(row.command, event) }) : null,
       h('div', { className: 'kq-result__actions' },
         row.active ? h(GhostButton, { label: '取消任务', onClick: onCancel, ariaLabel: `取消任务 ${row.title}` }) : null,
         row.canRepair ? h(GhostButton, { label: '按建议修复', onClick: onRepair, ariaLabel: `按验收建议修复 ${row.title}` }) : null,
         row.output ? h(GhostButton, { label: '打开文件夹', onClick: () => onReveal(row.output), ariaLabel: `打开所在文件夹 ${row.output}` }) : null,
-        row.output ? h(GhostButton, { label: '复制输出路径', onClick: () => onCopy(row.output), ariaLabel: `复制输出路径 ${row.output}` }) : null))
+        row.output ? h(GhostButton, { label: '复制输出路径', onClick: (event) => onCopy(row.output, event), ariaLabel: `复制输出路径 ${row.output}` }) : null))
       : null)
 }
 

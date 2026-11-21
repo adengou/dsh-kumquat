@@ -70,6 +70,7 @@ export function createPanel(React) {
     const [dirDialog, setDirDialog] = React.useState(false)
     const [minimized, setMinimized] = React.useState(false)
     const [toastText, setToastText] = React.useState('')
+    const [copyToast, setCopyToast] = React.useState(null)
 
     React.useEffect(() => {
       const reopen = () => setMinimized(false)
@@ -130,6 +131,12 @@ export function createPanel(React) {
     if (storeRef.current === null) storeRef.current = createStore(reducer, initialState())
     const store = storeRef.current
     const state = store.getState()
+    React.useEffect(() => {
+      if (!copyToast) return undefined
+      const timer = setTimeout(() => setCopyToast(null), 2600)
+      return () => clearTimeout(timer)
+    }, [copyToast && copyToast.id])
+
     React.useEffect(() => {
       if (!state.noticeAt) return undefined
       setToastText(state.notice || '')
@@ -250,11 +257,16 @@ export function createPanel(React) {
       toast('网页端不能打开文件夹，路径已复制，粘贴到资源管理器地址栏即可。')
     }
 
-    const copy = async (text) => {
+    const copy = async (text, event) => {
       const copied = await copyText(text)
       dispatch({ type: ACT.COPIED, key: copied ? text : null })
-      if (copied) dispatch({ type: ACT.NOTICE, notice: '已复制到剪贴板' })
-      else dispatch({ type: ACT.NOTICE, notice: '复制失败：请手动选中命令或路径。' })
+      if (!copied) {
+        dispatch({ type: ACT.NOTICE, notice: '复制失败：请手动选中命令或路径。' })
+        return
+      }
+      const x = event && Number.isFinite(event.clientX) ? event.clientX : window.innerWidth / 2
+      const y = event && Number.isFinite(event.clientY) ? event.clientY : window.innerHeight - 90
+      setCopyToast({ id: Date.now(), x, y })
     }
 
     const loadFile = (slot, path, name) => {
@@ -480,7 +492,14 @@ export function createPanel(React) {
       state.screen !== 'home'
         ? h(ResultsPanel, { model: results, onToggle: (id) => dispatch({ type: ACT.EXPAND, id }), onCopy: copy, onCancel: cancelJob, onRepair: repair, onReveal: reveal })
         : null,
-      toastText ? h('div', { className: 'kq-toast', role: 'status', 'aria-live': 'polite' }, toastText) : null),
+      toastText ? h('div', { className: 'kq-toast', role: 'status', 'aria-live': 'polite' }, toastText) : null,
+    copyToast
+      ? h('div', {
+        className: 'kq-copy-toast',
+        role: 'status',
+        style: { left: copyToast.x + 'px', top: copyToast.y + 'px' },
+      }, '已复制')
+      : null),
     dialogSlot !== null
       ? h(FileDialog, {
         React,

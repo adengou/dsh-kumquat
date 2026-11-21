@@ -2927,6 +2927,11 @@ const CSS_TEXT = `
   color:var(--kq-muted);cursor:move;user-select:none;font-size:var(--kq-fs-1);touch-action:none}
 .kq-float__grip{letter-spacing:2px}
 .kq-float__title{flex:1;color:var(--kq-text);font-weight:600;font-size:var(--kq-fs-2)}
+.kq-copy-toast{position:fixed;z-index:2147482600;transform:translate(-50%,-140%);
+  padding:5px 12px;border-radius:999px;background:#1f9d63;color:#fff;
+  font-size:var(--kq-fs-1);line-height:1.3;pointer-events:none;
+  box-shadow:0 8px 20px rgba(0,0,0,.28);animation:kq-copy-rise 2.6s ease-out forwards}
+@keyframes kq-copy-rise{0%{opacity:0;transform:translate(-50%,-110%)}12%{opacity:1;transform:translate(-50%,-140%)}70%{opacity:1;transform:translate(-50%,-155%)}100%{opacity:0;transform:translate(-50%,-185%)}}
 .kq-toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%);z-index:2147482500;
   max-width:min(560px,90vw);padding:10px 18px;border-radius:999px;background:rgba(18,20,26,.94);
   color:#fff;font-size:var(--kq-fs-2);line-height:1.4;text-align:center;
@@ -3980,12 +3985,12 @@ function ResultRow({ row, onToggle, onCopy, onCancel, onRepair, onReveal }) {
         h('span', { className: 'kq-check-row__text' }, check.text || '—',
           check.delta ? h('span', { className: 'kq-check-row__delta' }, ` （${check.delta}）`) : null))))
         : null,
-      row.command ? h(CommandBlock, { command: row.command, copied: row.copied, onCopy: () => onCopy(row.command) }) : null,
+      row.command ? h(CommandBlock, { command: row.command, copied: row.copied, onCopy: (event) => onCopy(row.command, event) }) : null,
       h('div', { className: 'kq-result__actions' },
         row.active ? h(GhostButton, { label: '取消任务', onClick: onCancel, ariaLabel: `取消任务 ${row.title}` }) : null,
         row.canRepair ? h(GhostButton, { label: '按建议修复', onClick: onRepair, ariaLabel: `按验收建议修复 ${row.title}` }) : null,
         row.output ? h(GhostButton, { label: '打开文件夹', onClick: () => onReveal(row.output), ariaLabel: `打开所在文件夹 ${row.output}` }) : null,
-        row.output ? h(GhostButton, { label: '复制输出路径', onClick: () => onCopy(row.output), ariaLabel: `复制输出路径 ${row.output}` }) : null))
+        row.output ? h(GhostButton, { label: '复制输出路径', onClick: (event) => onCopy(row.output, event), ariaLabel: `复制输出路径 ${row.output}` }) : null))
       : null)
 }
 
@@ -4385,6 +4390,7 @@ function createPanel(React) {
     const [dirDialog, setDirDialog] = React.useState(false)
     const [minimized, setMinimized] = React.useState(false)
     const [toastText, setToastText] = React.useState('')
+    const [copyToast, setCopyToast] = React.useState(null)
 
     React.useEffect(() => {
       const reopen = () => setMinimized(false)
@@ -4445,6 +4451,12 @@ function createPanel(React) {
     if (storeRef.current === null) storeRef.current = createStore(reducer, initialState())
     const store = storeRef.current
     const state = store.getState()
+    React.useEffect(() => {
+      if (!copyToast) return undefined
+      const timer = setTimeout(() => setCopyToast(null), 2600)
+      return () => clearTimeout(timer)
+    }, [copyToast && copyToast.id])
+
     React.useEffect(() => {
       if (!state.noticeAt) return undefined
       setToastText(state.notice || '')
@@ -4565,11 +4577,16 @@ function createPanel(React) {
       toast('网页端不能打开文件夹，路径已复制，粘贴到资源管理器地址栏即可。')
     }
 
-    const copy = async (text) => {
+    const copy = async (text, event) => {
       const copied = await copyText(text)
       dispatch({ type: ACT.COPIED, key: copied ? text : null })
-      if (copied) dispatch({ type: ACT.NOTICE, notice: '已复制到剪贴板' })
-      else dispatch({ type: ACT.NOTICE, notice: '复制失败：请手动选中命令或路径。' })
+      if (!copied) {
+        dispatch({ type: ACT.NOTICE, notice: '复制失败：请手动选中命令或路径。' })
+        return
+      }
+      const x = event && Number.isFinite(event.clientX) ? event.clientX : window.innerWidth / 2
+      const y = event && Number.isFinite(event.clientY) ? event.clientY : window.innerHeight - 90
+      setCopyToast({ id: Date.now(), x, y })
     }
 
     const loadFile = (slot, path, name) => {
@@ -4795,7 +4812,14 @@ function createPanel(React) {
       state.screen !== 'home'
         ? h(ResultsPanel, { model: results, onToggle: (id) => dispatch({ type: ACT.EXPAND, id }), onCopy: copy, onCancel: cancelJob, onRepair: repair, onReveal: reveal })
         : null,
-      toastText ? h('div', { className: 'kq-toast', role: 'status', 'aria-live': 'polite' }, toastText) : null),
+      toastText ? h('div', { className: 'kq-toast', role: 'status', 'aria-live': 'polite' }, toastText) : null,
+    copyToast
+      ? h('div', {
+        className: 'kq-copy-toast',
+        role: 'status',
+        style: { left: copyToast.x + 'px', top: copyToast.y + 'px' },
+      }, '已复制')
+      : null),
     dialogSlot !== null
       ? h(FileDialog, {
         React,

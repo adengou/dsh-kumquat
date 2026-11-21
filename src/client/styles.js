@@ -135,6 +135,11 @@ export const CSS_TEXT = `
   color:var(--kq-muted);cursor:move;user-select:none;font-size:var(--kq-fs-1);touch-action:none}
 .kq-float__grip{letter-spacing:2px}
 .kq-float__title{flex:1;color:var(--kq-text);font-weight:600;font-size:var(--kq-fs-2)}
+.kq-copy-toast{position:fixed;z-index:2147482600;transform:translate(-50%,-140%);
+  padding:5px 12px;border-radius:999px;background:#1f9d63;color:#fff;
+  font-size:var(--kq-fs-1);line-height:1.3;pointer-events:none;
+  box-shadow:0 8px 20px rgba(0,0,0,.28);animation:kq-copy-rise 2.6s ease-out forwards}
+@keyframes kq-copy-rise{0%{opacity:0;transform:translate(-50%,-110%)}12%{opacity:1;transform:translate(-50%,-140%)}70%{opacity:1;transform:translate(-50%,-155%)}100%{opacity:0;transform:translate(-50%,-185%)}}
 .kq-toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%);z-index:2147482500;
   max-width:min(560px,90vw);padding:10px 18px;border-radius:999px;background:rgba(18,20,26,.94);
   color:#fff;font-size:var(--kq-fs-2);line-height:1.4;text-align:center;
