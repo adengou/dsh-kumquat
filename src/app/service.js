@@ -222,6 +222,10 @@ export function createService(options = {}) {
       })
     }
 
+    const audioOnly = plan.spec && plan.spec.audio !== undefined && plan.spec.video === undefined
+    const decodedAudioDuration = audioOnly ? await m.audioDuration(targetPath) : null
+    if (decodedAudioDuration !== null) facts = { ...facts, durationSec: decodedAudioDuration }
+
     progressSink(jobId, { phase: 'verifying', percent: 99 })
     const sampleMode = plan.spec?.decodable === 'full' ? 'full' : 'sample'
     const decode = await m.decode(targetPath, { sample: sampleMode, facts })

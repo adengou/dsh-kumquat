@@ -296,8 +296,40 @@ export function measure({ run, probe, ffmpeg } = {}) {
     }
   }
 
+  /**
+   * Decoded audio duration from the last packet timestamp. ADTS/AAC has no
+   * reliable container duration (ffprobe estimates it from bitrate), so this
+   * reads packet timings instead of format.duration.
+   * @param {string} filePath
+   * @returns {Promise<number | null>}
+   */
+  async function audioDuration(filePath) {
+    const assertPath = requirePath(filePath)
+    try {
+      const result = await run([
+        ffprobePath,
+        '-v', 'error',
+        '-select_streams', 'a:0',
+        '-show_entries', 'packet=pts_time,duration_time',
+        '-of', 'csv=p=0',
+        assertPath,
+      ], { timeoutMs: 60000 })
+      if (result.code !== 0) return null
+      let end = 0
+      for (const line of String(result.stdout || '').split('\n')) {
+        const [ptsText, durText] = line.split(',')
+        const pts = Number(ptsText)
+        const dur = Number(durText)
+        if (Number.isFinite(pts) && Number.isFinite(dur)) end = Math.max(end, pts + dur)
+      }
+      return end > 0 ? Math.round(end * 1000) / 1000 : null
+    } catch {
+      return null
+    }
+  }
   return Object.freeze({
     decode,
+    audioDuration,
     loudness,
     gifInfo,
     ffmpegPath,
