@@ -364,6 +364,23 @@ export function checkDurationDrift(facts, spec = {}, measurements = {}) {
     })
   }
 
+  // Audio-only re-encodes (MP3 -> AAC and friends) inherit the source
+  // container's declared duration, which for VBR MP3 is often a bit-rate
+  // estimate. The encoded file follows decoded samples, so a few seconds of
+  // drift is a metadata artifact, not a broken conversion.
+  const audioOnly = spec.video === undefined && spec.gif === undefined && spec.audio !== undefined
+  if (audioOnly) {
+    const audioTolerance = Math.max(tolerance, expected * 0.03)
+    if (Math.abs(diff) <= audioTolerance + 1e-9) {
+      return check('duration.drift', 'L0', 'warn',
+        `${secText(expected)} ±${audioTolerance.toFixed(2)}s（音频重编码）`,
+        actualText,
+        {
+          delta: deltaText,
+          hint: '音频容器的时长常来自码率估算，和实际解码样本可能差几秒；不影响播放。',
+        })
+    }
+  }
   return check('duration.drift', 'L0', 'fail', expectedText, actualText, {
     delta: deltaText,
     hint: '重编码时长偏离：检查 -t/-to 精度与音视频时间基；修法是按原参数重跑一次。',

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { runChecks, summarizeChecks } from '../../src/verify/checks.js'
+import { checkDurationDrift, runChecks, summarizeChecks } from '../../src/verify/checks.js'
 
 const REQUIRED_IDS = [
   'streams.count',
@@ -327,4 +327,23 @@ test('spec tolerance overrides the default duration tolerance', () => {
     'duration.drift'
   )
   assert.equal(strict.outcome, 'fail')
+})
+
+test('audio-only duration metadata drift warns instead of failing', () => {
+  const check = checkDurationDrift(
+    { durationSec: 150.78 },
+    { durationSec: { expect: 147.72 }, audio: { codec: 'aac' }, video: undefined },
+    {},
+  )
+  assert.equal(check.outcome, 'warn')
+  assert.match(check.hint || '', /音频/)
+})
+
+test('video duration drift still fails', () => {
+  const check = checkDurationDrift(
+    { durationSec: 15.78 },
+    { durationSec: { expect: 12 }, audio: { codec: 'aac' }, video: { codec: 'h264' } },
+    {},
+  )
+  assert.equal(check.outcome, 'fail')
 })
